@@ -1814,7 +1814,7 @@ function oldModal(id){const i=cur().inv.find(x=>x.id===id),pd=vp(i).reduce((a,p)
 
 /* ---------- copie de sécurité vers le Google Sheet ---------- */
 const SYK='atody_sync';
-const DEFAULT_SERVER='';
+const DEFAULT_SERVER='https://script.google.com/macros/s/AKfycbxclbzVija-N6OoS6o5Qz6lcXxBav9WqzysE5DIw1DQ4yMQrstebpv-bxu65Q1S0Q/exec';
 const SYERR={code_manquant:'Entre ton code d’accès.',code_inconnu:'Ce code n’existe pas. Vérifie les lettres et les tirets.',code_complet:'Ce code est déjà utilisé sur le nombre maximum d’appareils. Demande un autre code à Stephen.',code_desactive:'Ce code a été désactivé.',non_active:'Cet appareil n’est pas encore activé.',acces_retire:'Ton accès a été retiré par Stephen.',role_insuffisant:'Ton accès ne permet pas cette action.',nom_manquant:'Écris ton nom pour faire la demande.',trop_de_demandes:'Trop de demandes en attente. Préviens Stephen.',appareil_inconnu:'Appareil non reconnu.'};
 const syncCfg=()=>{try{return JSON.parse(localStorage.getItem(SYK))||{}}catch(e){return{}}};
 const syncSet=o=>{try{localStorage.setItem(SYK,JSON.stringify({...syncCfg(),...o}))}catch(e){}};
@@ -2085,7 +2085,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 window.addEventListener('pagehide',persist);
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 try{if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
-const APP_VERSION='2026.11.08-d';
+const APP_VERSION='2026.11.08-e';
 function showUpd(){let seen='';try{seen=localStorage.getItem('atody_ver')||''}catch(e){}
  try{localStorage.setItem('atody_ver',APP_VERSION)}catch(e){}
  if(!seen||seen===APP_VERSION)return;const sp=document.getElementById('splash');if(!sp)return;
