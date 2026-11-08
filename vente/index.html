@@ -2087,12 +2087,11 @@ window.addEventListener('pagehide',persist);
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 try{if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
 const APP_VERSION='2026.11.08-d';
-const APP_NOTES=['Page « Situation de départ » : tout se corrige, avec l’historique des changements','Bouton « Ancienne dette encaissée » et séparation des ventes du mois','Budget prévu et montants préremplis pour les dépenses','Vérification de la caisse réelle','Connexion au serveur Google Sheet par code d’accès ou demande vendeur'];
 function showUpd(){let seen='';try{seen=localStorage.getItem('atody_ver')||''}catch(e){}
  try{localStorage.setItem('atody_ver',APP_VERSION)}catch(e){}
  if(!seen||seen===APP_VERSION)return;const sp=document.getElementById('splash');if(!sp)return;
  const d=document.createElement('div');d.className='upd';d.setAttribute('role','dialog');d.setAttribute('aria-label','Mise à jour');
- d.innerHTML='<b>ATODY a été mis à jour</b><small>Version '+APP_VERSION+'</small><ul>'+APP_NOTES.map(x=>'<li>'+x+'</li>').join('')+'</ul><button type="button" class="btn g s">Compris</button>';
+ d.innerHTML='<b>ATODY a été mis à jour</b><button type="button" class="btn g s">Compris</button>';
  d.addEventListener('click',e=>{e.stopPropagation();if(e.target.tagName==='BUTTON')d.remove()});sp.appendChild(d)}
 armSplash(true);showUpd();
 render();
