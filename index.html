@@ -1723,6 +1723,8 @@ function homeBanners(){if(training||role!=='admin')return '';let h='';
  if(!REAL.setup)h+=`<div class="card ban"><span><b>Première étape</b>Renseigne la situation de départ : caisse, poules, stock, ce que doivent les revendeurs, dépenses fixes et salaires.</span><button class="btn g s" data-a="gosetup">Commencer</button></div>`;
  else if(REAL.inv.some(i=>i.amt==null)&&(!REAL.lastBackup||dayDiff(REAL.lastBackup)>=7))h+=`<div class="card ban"><span><b>Pense à sauvegarder</b>${REAL.lastBackup?'Dernière sauvegarde il y a '+dayDiff(REAL.lastBackup)+' jours.':'Aucune sauvegarde pour le moment.'} Elle protège les données si le téléphone est perdu ou vidé.</span><button class="btn g s" data-a="backup">Sauvegarder</button></div>`;
  return h}
+function resetCard(){if(training||role!=='admin')return '';
+ return `<div class="card"><h3>Remise à zéro</h3><p class="note" style="margin:4px 0 10px">Pour effacer ce qui a été saisi par erreur pendant la préparation : clients, ventes, encaissements, dépenses et situation de départ repartent de zéro. Une sauvegarde est téléchargée avant, au cas où.</p><button class="btn r s" data-a="rzask">Tout remettre à zéro…</button></div>`}
 function setupCard(){if(training||role!=='admin')return '';
  return REAL.setup?`<div class="card"><h3>Situation de départ</h3><p class="note" style="margin:4px 0 0">Enregistrée. Début du suivi : <b>${dfmt(REAL.start)}</b> · caisse de départ : <b>${ar(REAL.cash0||0)}</b>.</p><div class="row" style="margin-top:12px"><button class="btn g s" data-a="gostart">Ouvrir la situation de départ</button></div></div>`:`<div class="card ban"><span><b>Situation de départ</b>À renseigner une seule fois, avant la première vente.</span><button class="btn g s" data-a="gosetup">Commencer</button></div>`}
 
@@ -1762,7 +1764,7 @@ function swSave(){const w=sw,er=document.getElementById('swer');
  REAL.setup=true;sw=null;applyFixed();stack=[];view='home';sub=null;toast('Situation de départ enregistrée');render()}
 function vSet(){
  const c=cur();
- return setupCard()+usersCard()+syncCard()+`<div class="card"><h3>Mode formation</h3><div class="sub">Des données d’exemple pour s’entraîner sans risque. Rien ne touche les vraies données, et tout s’efface en quittant.</div>
+ return setupCard()+usersCard()+syncCard()+resetCard()+`<div class="card"><h3>Mode formation</h3><div class="sub">Des données d’exemple pour s’entraîner sans risque. Rien ne touche les vraies données, et tout s’efface en quittant.</div>
  <div class="row"><button class="btn ${training?'l':'g'}" data-a="${training?'trainOff':'trainOn'}">${training?'Quitter le mode formation':'Démarrer le mode formation'}</button>${training?`<button class="btn l" data-a="trainReset">${t('trainReset')}</button>`:''}</div></div>
  <h2>Apparence et langue</h2><div class="card"><div class="setrow"><span>Thème</span><span class="seg"><button class="${theme==='auto'?'on':''}" data-a="setTheme" data-k="auto">Auto</button><button class="${theme==='light'?'on':''}" data-a="setTheme" data-k="light">Clair</button><button class="${theme==='dark'?'on':''}" data-a="setTheme" data-k="dark">Sombre</button></span></div>
  <div class="setrow"><span>${t('lang')}</span><span class="seg"><button class="${lang==='fr'?'on':''}" data-a="lang" data-k="fr">Français</button><button class="${lang==='mg'?'on':''}" data-a="lang" data-k="mg">Malagasy</button></span></div></div>
@@ -2012,6 +2014,11 @@ document.addEventListener('click',e=>{
   syncCall({action:'inviter',email:em,prenoms:p,nom:n,role:r}).then(()=>{close();toast('Code envoyé à '+em);loadUsers()}).catch(e=>{er.textContent=gMsg(e)});return}
  case 'uop':{const op=b.dataset.op,em=b.dataset.em;close();toast('En cours…');
   syncCall({action:'maj_utilisateur',email:em,op,role:b.dataset.role,ref:b.dataset.ref}).then(()=>{toast(op==='retirer'?'Appareil retiré':op==='accepter'||op==='renvoyer'||op==='reinit'?'Code envoyé par e-mail':op==='refuser'?'Demande refusée':op==='liberer'?'Appareil libéré':op==='bloquer'?'Accès coupé':'Fait');loadUsers()}).catch(e=>toast(gMsg(e)));return}
+ case 'rzask':modal(`<h3>Tout remettre à zéro ?</h3><p class="note">Toutes les vraies données saisies seront effacées sur cet appareil et dans la copie du Google Sheet. Les comptes (utilisateurs, appareils) ne sont pas touchés. Une sauvegarde est téléchargée d’abord.</p><div class="field"><label for="rzt">Pour confirmer, écris : ZERO</label><input id="rzt" autocomplete="off" autocapitalize="characters" spellcheck="false"></div><div class="err" id="rzer"></div>${btns('dorz')}`);return
+ case 'dorz':{const er=document.getElementById('rzer');if(val('rzt').trim().toUpperCase()!=='ZERO'){er.textContent='Écris ZERO pour confirmer.';return}
+  er.textContent='Remise à zéro en cours…';exportData();const c=syncCfg(),nv=mkEmpty();nv.users=REAL.users;
+  const fin=()=>{REAL=nv;keepMe();persist();lastSent=JSON.stringify(REAL);close();stack=[];view='home';toast('Tout est remis à zéro');render()};
+  if(c.url&&c.act&&role==='admin')syncCall({action:'backup',json:JSON.stringify(nv)}).then(fin).catch(e=>{er.textContent='Impossible de vider la copie du Sheet : '+gMsg(e)+' Rien n’a été effacé.'});else fin();return}
  case 'cplink':cpTxt(b.dataset.u);return;
  case 'uplus':{const u=(SUL||[]).find(x=>x.email===b.dataset.em);if(!u)return;const em=esc(u.email);
   modal(`<h3>${esc((u.prenoms+' '+u.nom).trim())}</h3><p class="note">${em}</p><div class="col" style="display:grid;gap:8px"><button class="btn l" data-a="urn" data-em="${em}">Renommer</button><button class="btn l" data-a="uop" data-op="renvoyer" data-em="${em}">Renvoyer un code par e-mail</button><button class="btn l" data-a="uop" data-op="reinit" data-em="${em}">Nouveau code (l’ancien ne marche plus)</button><button class="btn r" data-a="usdel" data-em="${em}">Supprimer ce compte</button><button class="btn l" data-a="mclose">Fermer</button></div>`);return}
@@ -2171,7 +2178,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 window.addEventListener('pagehide',persist);
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 try{if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
-const APP_VERSION='2026.11.08-h';
+const APP_VERSION='2026.11.08-i';
 function showUpd(){let seen='';try{seen=localStorage.getItem('atody_ver')||''}catch(e){}
  try{localStorage.setItem('atody_ver',APP_VERSION)}catch(e){}
  if(!seen||seen===APP_VERSION)return;const sp=document.getElementById('splash');if(!sp)return;
