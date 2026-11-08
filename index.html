@@ -801,6 +801,7 @@ body{background:linear-gradient(160deg,var(--bg),color-mix(in srgb,var(--c4) 9%,
 .bgr.tot{border-bottom:0}
 .orow2{flex-wrap:wrap}.orow2 span,.bgr>span{min-width:0;overflow-wrap:anywhere}.olist{min-width:0}
 .orow2.lg>span{white-space:normal;text-align:left;font-weight:400}.orow2.lg b{font-weight:700}
+.upd{position:absolute;left:16px;right:16px;bottom:max(16px,env(safe-area-inset-bottom,0px));max-width:460px;margin:0 auto;background:#fff;color:#1B1C21;border-radius:18px;padding:16px 18px;text-align:left;z-index:6;box-shadow:0 18px 50px rgba(0,0,0,.4);display:grid;gap:6px}.upd b{font-family:var(--fd);font-size:20px;font-weight:400}.upd small{color:#667082}.upd ul{margin:4px 0 8px;padding-left:18px;font-size:14px;line-height:1.45}.upd .btn{justify-self:start}
 </style>
 
 <div class="splash" id="splash"><div class="sp-in"><div class="sp-streaks" aria-hidden="true"></div>
@@ -984,7 +985,7 @@ function shell(body){
  <button class="chip ic" data-a="theme" aria-label="Thème clair ou sombre">${ic(effDark()?'sun':'moon')}</button>
  ${role==='admin'?`<button class="chip ic" data-a="goSet" aria-label="${t('set')}">${ic('set')}</button>`:''}<button class="chip ic" data-a="logout" aria-label="Changer d’utilisateur" title="${me?esc(me.name):''}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button></div></div>
  ${training?`<div class="banner"><span>${t('trainOn')}</span><span class="row" style="flex:none"><button data-a="trainReset">${t('trainReset')}</button><button data-a="trainOff">${t('trainOff')}</button></span></div>`:''}
- ${role==='cash'?`<div class="banner blue"><span>Aperçu de l’application caissier : ventes et encaissements, sans trésorerie ni bilan.</span><button data-a="roleAdmin" style="border-color:var(--navy2)">Quitter l’aperçu</button></div>`:''}
+ ${role==='cash'&&!window.ATODY_VENTE?`<div class="banner blue"><span>Aperçu de l’application caissier : ventes et encaissements, sans trésorerie ni bilan.</span><button data-a="roleAdmin" style="border-color:var(--navy2)">Quitter l’aperçu</button></div>`:''}
  <div class="view">${body}</div></div></main>
  <nav class="tabs" style="${nav.length<2?'display:none':''};grid-template-columns:repeat(${nav.length},1fr)">${nav.map(([k,i])=>`<button class="${view===k?'on':''}" data-a="nav" data-k="${k}">${ic(i)}${k==='home'&&role==='cash'?'Caisse':t(k)}</button>`).join('')}</nav>${selBar()}<button class="asfab" data-a="askopen" data-v="${view}" aria-label="AS : poser une question"><b>AS</b><span>Questions</span></button></div>`}
 
@@ -1651,9 +1652,11 @@ let me=null,authSel='',authTry=0,authLock=0;const SK='atody_sess';
 const meName=()=>me?me.name:((cur().people||[])[0]||'');
 function showAuth(h){let a=document.getElementById('auth');if(!a){a=document.createElement('div');a.id='auth';a.className='auth';document.body.appendChild(a)}a.innerHTML=h}
 function hideAuth(){const a=document.getElementById('auth');a&&a.remove()}
-function authGate(){const U=REAL.users.filter(u=>u.on!==false);if(!REAL.users.length){authCreate();return}
+function showVenteGate(){const c=syncCfg(),st=c.statut==='bloque'?'<span class="neg">Accès refusé. Contacte Stephen.</span>':c.req?`Demande envoyée${c.ref?' · référence <b>'+esc(c.ref)+'</b>':''}. Stephen doit la valider.`:'Écris ton nom : Stephen reçoit ta demande et la valide.';
+ showAuth(`<div class="authc"><div class="alogo">${LOGO}</div><h1>ATODY Ventes</h1><p>${st}</p><div class="field"><label for="syu">Adresse du serveur</label><input id="syu" value="${esc(c.url||DEFAULT_SERVER)}" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off"></div><div class="field"><label for="syn">Ton nom</label><input id="syn" value="${esc(c.name||'')}" autocomplete="off"></div><div class="err" id="syer"></div>${c.req?'<button class="btn g" style="width:100%" data-a="systat">Vérifier ma demande</button>':'<button class="btn g" style="width:100%" data-a="syreq">Demander l’accès</button>'}<div class="aby">by Stephen</div></div>`)}
+function authGate(){if(window.ATODY_VENTE&&!syncCfg().act){showVenteGate();return}const U=REAL.users.filter(u=>u.on!==false);if(!REAL.users.length){authCreate();return}
  let sid='';try{sid=localStorage.getItem(SK)||''}catch(e){}const u=U.find(x=>x.id===sid);if(u){signIn(u);return}authLogin()}
-function signIn(u,hello){me=u;role=u.role==='admin'?'admin':'cash';try{localStorage.setItem(SK,u.id)}catch(e){}hideAuth();stack=[];view='home';sub=null;selInv.clear();render();if(hello)toast('Bonjour '+u.name)}
+function signIn(u,hello){me=u;role=(!window.ATODY_VENTE&&u.role==='admin')?'admin':'cash';try{localStorage.setItem(SK,u.id)}catch(e){}hideAuth();stack=[];view='home';sub=null;selInv.clear();render();if(hello)toast('Bonjour '+u.name)}
 function authCreate(){showAuth(`<div class="authc"><div class="alogo">${LOGO}</div><h1>Bienvenue sur ATODY</h1><p>Crée le premier compte, celui de l’administrateur. Choisis un code secret de 4 à 6 chiffres.</p><div class="field"><label for="an">Prénom</label><input id="an" autocomplete="off"></div><div class="field"><label for="ap">Code secret</label><input id="ap" type="password" inputmode="numeric" maxlength="6" autocomplete="off"></div><div class="field"><label for="ap2">Répète le code</label><input id="ap2" type="password" inputmode="numeric" maxlength="6" autocomplete="off"></div><div class="err" id="aerr"></div><button class="big" data-a="authmk">Créer et commencer</button><small class="aby">by Stephen</small></div>`);setTimeout(()=>{const e=document.getElementById('an');e&&e.focus()},120)}
 function authLogin(){const U=REAL.users.filter(u=>u.on!==false);if(U.length===1&&!authSel)authSel=U[0].id;
  showAuth(`<div class="authc"><div class="alogo">${LOGO}</div><h1>Qui utilise ATODY ?</h1><div class="cpg">${U.map(u=>`<button class="cb ${authSel===u.id?'on':''}" data-a="authpick" data-id="${u.id}"><span class="av2">${esc(u.name[0]||'?')}</span><span>${esc(u.name)}<small style="display:block;font-weight:500;color:var(--muted)">${u.role==='admin'?'Administrateur':'Caissier'}</small></span></button>`).join('')}</div>${authSel?`<div class="field" style="margin-top:14px"><label for="apin">Code secret</label><input id="apin" type="password" inputmode="numeric" maxlength="6" autocomplete="off"></div><div class="err" id="aerr"></div><button class="big" data-a="authgo">Entrer</button>`:''}<small class="aby">by Stephen</small></div>`);
@@ -1811,29 +1814,31 @@ function oldModal(id){const i=cur().inv.find(x=>x.id===id),pd=vp(i).reduce((a,p)
 
 /* ---------- copie de sécurité vers le Google Sheet ---------- */
 const SYK='atody_sync';
-const DEFAULT_SERVER='https://script.google.com/macros/s/AKfycbw1wFY3GnxcDM5klOUvIHaI029YVvhZG7ftlM4qBcTvorKM88b7vKTSvGY4B2yif5U/exec';
-const SYERR={code_manquant:'Entre ton code d’accès.',code_inconnu:'Ce code n’existe pas. Vérifie les lettres et les tirets.',code_deja_utilise:'Ce code est déjà utilisé sur un autre appareil. Demande un nouveau code à Stephen.',code_desactive:'Ce code a été désactivé.',non_active:'Cet appareil n’est pas encore activé : entre le code et appuie sur « Activer cet appareil ».',appareil_inconnu:'Appareil non reconnu.',serveur_non_prepare:'Le serveur n’est pas encore prêt (l’onglet Codes manque).'};
+const DEFAULT_SERVER='';
+const SYERR={code_manquant:'Entre ton code d’accès.',code_inconnu:'Ce code n’existe pas. Vérifie les lettres et les tirets.',code_complet:'Ce code est déjà utilisé sur le nombre maximum d’appareils. Demande un autre code à Stephen.',code_desactive:'Ce code a été désactivé.',non_active:'Cet appareil n’est pas encore activé.',acces_retire:'Ton accès a été retiré par Stephen.',role_insuffisant:'Ton accès ne permet pas cette action.',nom_manquant:'Écris ton nom pour faire la demande.',trop_de_demandes:'Trop de demandes en attente. Préviens Stephen.',appareil_inconnu:'Appareil non reconnu.'};
 const syncCfg=()=>{try{return JSON.parse(localStorage.getItem(SYK))||{}}catch(e){return{}}};
 const syncSet=o=>{try{localStorage.setItem(SYK,JSON.stringify({...syncCfg(),...o}))}catch(e){}};
-async function syncCall(body){const c=syncCfg();if(!c.url||!c.token)throw new Error('Adresse ou code manquant');
+const newDev=()=>{try{if(crypto.randomUUID)return crypto.randomUUID().replace(/-/g,'')}catch(e){}return uid()+uid()+uid()+uid()};
+async function syncCall(body){const c=syncCfg();if(!c.url||!c.dev)throw new Error('Adresse du serveur manquante');
  const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),25000);
- try{const r=await fetch(c.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...body,token:c.token,device:{id:c.dev,nom:c.name||''}}),redirect:'follow',signal:ctl.signal});
+ try{const r=await fetch(c.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...body,device:{id:c.dev,nom:c.name||''}}),redirect:'follow',signal:ctl.signal});
   const j=await r.json();if(!j.ok)throw new Error(SYERR[j.erreur]||j.erreur||'Erreur du serveur');return j}finally{clearTimeout(tm)}}
+const afterSync=()=>{if(window.ATODY_VENTE){if(syncCfg().act){hideAuth();authGate()}else showVenteGate()}else render()};
 let lastSent='',syncBusy=false;
-async function syncBackup(force){if(training||syncBusy)return false;const c=syncCfg();if(!c.url||!c.token||!REAL.setup)return false;
+async function syncBackup(force){if(training||syncBusy)return false;const c=syncCfg();if(!c.url||!c.act||c.role!=='admin'||!REAL.setup)return false;
  const js=JSON.stringify(REAL);if(!force&&js===lastSent)return false;syncBusy=true;
  try{await syncCall({action:'backup',json:js});lastSent=js;syncSet({ok:Date.now(),err:''});return true}
  catch(e){syncSet({err:String(e.message||e)});return false}
  finally{syncBusy=false;const ae=document.activeElement;if(view==='set'&&!document.querySelector('.modal')&&!(ae&&/INPUT|SELECT|TEXTAREA/.test(ae.tagName)))render()}}
 setInterval(()=>{if(navigator.onLine!==false)syncBackup(false)},180000);
 window.addEventListener('online',()=>syncBackup(false));
-function syncCard(){if(training||role!=='admin')return '';const c=syncCfg(),ok=c.ok?new Date(c.ok):null;
- const st=!c.act?'Pas encore activé.':c.err?`<span class="neg">Dernier essai raté : ${esc(c.err)}</span>`:ok?`Dernière copie : <b>${ok.toLocaleDateString('fr-FR')} ${ok.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</b>`:'Branché, aucune copie envoyée pour l’instant.';
- return `<div class="card"><h3>Connexion au serveur</h3><p class="note" style="margin:4px 0 10px">Une copie complète des données part toute seule vers le Google Sheet, toutes les 3 minutes quand il y a du nouveau et que le téléphone ou l’ordinateur a internet. ${st}</p>
+function syncCard(){if(training||role!=='admin')return '';const c=syncCfg(),ok=c.ok?new Date(c.ok):null,adm=c.act&&c.role==='admin';
+ const st=c.statut==='bloque'?'<span class="neg">Accès retiré.</span>':c.req&&!c.act?`Demande envoyée${c.ref?' · référence <b>'+esc(c.ref)+'</b>':''}. En attente de validation par Stephen.`:!c.act?'Pas encore activé.':c.err?`<span class="neg">Dernier essai raté : ${esc(c.err)}</span>`:adm?(ok?`Dernière copie : <b>${ok.toLocaleDateString('fr-FR')} ${ok.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</b>`:'Activé, aucune copie envoyée pour l’instant.'):'Accès vendeur activé.';
+ return `<div class="card"><h3>Connexion au serveur</h3><p class="note" style="margin:4px 0 10px">${adm?'Une copie complète des données part toute seule vers le Google Sheet, toutes les 3 minutes quand il y a du nouveau et qu’il y a internet. ':''}${st}</p>
  <div class="field"><label for="syu">Adresse du serveur</label><input id="syu" value="${esc(c.url||DEFAULT_SERVER)}" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off"></div>
- <div class="field"><label for="syt">Code d’accès (une seule fois, un seul appareil)</label><input id="syt" value="${esc(c.token||'')}" placeholder="XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
- <div class="field"><label for="syn">Nom de cet appareil</label><input id="syn" value="${esc(c.name||'')}" placeholder="ex. PC de Maman"></div>
- <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn g s" data-a="sysave">${c.act?'Mettre à jour':'Activer cet appareil'}</button><button class="btn l s" data-a="sybackup">Envoyer une copie maintenant</button><button class="btn l s" data-a="syrestore">Restaurer depuis le Sheet</button></div><div class="err" id="syer"></div></div>`}
+ ${c.act?'':`<div class="field"><label for="syt">Code d’accès (si tu en as un)</label><input id="syt" value="" placeholder="XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>`}
+ <div class="field"><label for="syn">${c.act?'Nom de cet appareil':'Ton nom'}</label><input id="syn" value="${esc(c.name||'')}" placeholder="ex. PC de Maman"></div>
+ <div class="row" style="gap:8px;flex-wrap:wrap">${c.act?'':`<button class="btn g s" data-a="sysave">Activer avec ce code</button><button class="btn l s" data-a="syreq">Demander l’accès</button>`}${c.req&&!c.act?`<button class="btn l s" data-a="systat">Vérifier ma demande</button>`:''}${adm?`<button class="btn l s" data-a="sybackup">Envoyer une copie maintenant</button><button class="btn l s" data-a="syrestore">Restaurer depuis le Sheet</button>`:''}</div><div class="err" id="syer"></div></div>`}
 function cancelModal(title){modal(`<h3>${title}</h3><p class="note">Rien n’est effacé : l’élément reste visible, barré, et ne compte plus dans les chiffres.</p><div class="field"><label for="why">Pourquoi ? (facultatif)</label><input id="why" placeholder="ex. erreur de saisie"></div><div class="row"><button class="btn l" data-a="mclose">Garder</button><button class="btn r" data-a="doCancel">Oui, annuler</button></div>`)}
 
 /* ---------- actions ---------- */
@@ -1884,11 +1889,15 @@ document.addEventListener('click',e=>{
   if(am<=0){er.textContent='Entre un montant.';return}if(am<pd){er.textContent='Ce client a déjà payé '+ar(pd)+' : le montant ne peut pas être plus bas.';return}
   if(!why){er.textContent='Écris pourquoi tu corriges.';return}if(am===i.amt){er.textContent='Rien n’a changé.';return}
   logAdd('Ancien solde de '+cname(i.cl)+' : '+ar(i.amt)+' → '+ar(am),why);i.amt=am;close();toast('Corrigé');render();return}
- case 'sysave':{const u=val('syu').trim(),t2=val('syt').trim().toUpperCase(),n=val('syn').trim(),er=document.getElementById('syer');
+ case 'sysave':case 'syreq':{const u=val('syu').trim(),t2=(val('syt')||'').trim().toUpperCase(),n=val('syn').trim(),er=document.getElementById('syer');
   if(!/^https:\/\/script\.google\.com\/macros\/s\/[^\s]+\/exec$/.test(u)){er.textContent='L’adresse doit ressembler à https://script.google.com/macros/s/…/exec';return}
-  if(!t2){er.textContent='Entre ton code d’accès.';return}
-  syncSet({url:u,token:t2,name:n,dev:syncCfg().dev||uid()});er.textContent='Activation en cours…';
-  syncCall({action:'activer'}).then(j=>{syncSet({err:'',act:1,qui:j.nom||''});toast('Appareil activé ✓');return syncBackup(true)}).then(()=>render()).catch(e=>{syncSet({err:String(e.message||e)});render();const x=document.getElementById('syer');if(x)x.textContent='Connexion impossible : '+(e.message||e)});return}
+  const req=a==='syreq';if(req&&!n){er.textContent='Écris ton nom pour faire la demande.';return}if(!req&&!t2){er.textContent='Entre ton code d’accès.';return}
+  syncSet({url:u,name:n,dev:syncCfg().dev||newDev()});er.textContent=req?'Envoi de la demande…':'Activation en cours…';
+  (req?syncCall({action:'demander',nom:n}).then(j=>{syncSet({err:'',req:1,ref:j.reference||'',statut:j.statut});if(j.statut==='ok'){return syncCall({action:'statut'}).then(k=>syncSet({act:1,role:k.role}))}toast(j.statut==='bloque'?'Accès retiré':'Demande envoyée')}):
+   syncCall({action:'activer',code:t2}).then(j=>{syncSet({err:'',act:1,role:j.role,qui:j.nom||'',statut:'ok'});toast('Appareil activé ✓');return syncBackup(true)})
+  ).then(()=>afterSync()).catch(e=>{syncSet({err:String(e.message||e)});afterSync();const x=document.getElementById('syer');if(x)x.textContent='Impossible : '+(e.message||e)});return}
+ case 'systat':{const er=document.getElementById('syer');er.textContent='Vérification…';
+  syncCall({action:'statut'}).then(j=>{syncSet({statut:j.statut,role:j.role,ref:j.reference||syncCfg().ref,err:''});if(j.statut==='ok'){syncSet({act:1});toast('Accès accepté ✓')}else if(j.statut==='bloque')toast('Accès refusé');else toast('Toujours en attente');afterSync()}).catch(e=>{er.textContent='Impossible : '+(e.message||e)});return}
  case 'sybackup':{const er=document.getElementById('syer');er.textContent='Envoi…';syncBackup(true).then(r=>{toast(r?'Copie envoyée ✓':'Copie non envoyée');render()});return}
  case 'syrestore':{modal(`<h3>Restaurer depuis le Sheet ?</h3><p class="note">Cela remplace les données de cet appareil par la dernière copie du Sheet. À utiliser sur un appareil neuf ou vide.</p><div class="err" id="ser"></div><div class="row"><button class="btn l" data-a="mclose">${t('cancel')}</button><button class="btn r" data-a="dorestore">Oui, restaurer</button></div>`);return}
  case 'dorestore':{const er=document.getElementById('ser');er.textContent='Lecture…';
@@ -2076,7 +2085,15 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 window.addEventListener('pagehide',persist);
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 try{if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
-armSplash(true);
+const APP_VERSION='2026.11.08-d';
+const APP_NOTES=['Page « Situation de départ » : tout se corrige, avec l’historique des changements','Bouton « Ancienne dette encaissée » et séparation des ventes du mois','Budget prévu et montants préremplis pour les dépenses','Vérification de la caisse réelle','Connexion au serveur Google Sheet par code d’accès ou demande vendeur'];
+function showUpd(){let seen='';try{seen=localStorage.getItem('atody_ver')||''}catch(e){}
+ try{localStorage.setItem('atody_ver',APP_VERSION)}catch(e){}
+ if(!seen||seen===APP_VERSION)return;const sp=document.getElementById('splash');if(!sp)return;
+ const d=document.createElement('div');d.className='upd';d.setAttribute('role','dialog');d.setAttribute('aria-label','Mise à jour');
+ d.innerHTML='<b>ATODY a été mis à jour</b><small>Version '+APP_VERSION+'</small><ul>'+APP_NOTES.map(x=>'<li>'+x+'</li>').join('')+'</ul><button type="button" class="btn g s">Compris</button>';
+ d.addEventListener('click',e=>{e.stopPropagation();if(e.target.tagName==='BUTTON')d.remove()});sp.appendChild(d)}
+armSplash(true);showUpd();
 render();
 </script>
 
