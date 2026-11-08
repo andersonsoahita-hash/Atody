@@ -2136,10 +2136,11 @@ document.addEventListener('click',e=>{
  case 'roleCash':role='cash';root('home');return;
  case 'roleAdmin':role='admin';root('set');return;
  case 'trainOn':TRAIN=mkDemo();training=true;stack=[];view='home';sub=null;toast('Mode formation : données d’exemple');render();return;
- case 'trainReset':modal(`<h3>Mode formation</h3><p class="note">Rien de tout ça ne touche tes vraies données.</p><div style="display:grid;gap:8px"><button class="btn g" data-a="trainZero">Repartir à zéro (aucun produit, aucun client)</button><button class="btn l" data-a="trainDemo">Reprendre les données d’exemple</button><button class="btn l" data-a="mclose">Annuler</button></div>`);return
+ case 'trainReset':modal(`<h3>Mode formation</h3><p class="note">Rien de tout ça ne touche tes vraies données.</p><div style="display:grid;gap:8px"><button class="btn g" data-a="trainZero">Mettre à vide</button><button class="btn l" data-a="trainCopy">Reprendre l’état actuel</button><button class="btn l" data-a="trainOff">Quitter le mode formation</button><button class="btn l" data-a="mclose">Fermer</button></div>`);return
+ case 'trainCopy':TRAIN=JSON.parse(JSON.stringify(REAL));close();stack=[];view='home';sub=null;toast('Copie de tes données actuelles : tu peux t’entraîner sans risque');render();return
  case 'trainDemo':TRAIN=mkDemo();close();toast('Données d’exemple remises');render();return;
  case 'trainZero':{const z=mkEmpty();z.setup=true;z.start=TODAY;z.people=['Stephen'];TRAIN=z;close();stack=[];view='home';sub=null;toast('Formation remise à zéro');render();return}
- case 'trainOff':training=false;TRAIN=null;stack=[];view='home';sub=null;render();return;
+ case 'trainOff':close();training=false;TRAIN=null;stack=[];view='home';sub=null;render();return;
  }
 });
 document.addEventListener('change',e=>{
@@ -2180,7 +2181,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 window.addEventListener('pagehide',persist);
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 try{if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
-const APP_VERSION='2026.11.08-j';
+const APP_VERSION='2026.11.08-k';
 function showUpd(){let seen='';try{seen=localStorage.getItem('atody_ver')||''}catch(e){}
  try{localStorage.setItem('atody_ver',APP_VERSION)}catch(e){}
  if(!seen||seen===APP_VERSION)return;const sp=document.getElementById('splash');if(!sp)return;
