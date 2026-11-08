@@ -1811,12 +1811,14 @@ function oldModal(id){const i=cur().inv.find(x=>x.id===id),pd=vp(i).reduce((a,p)
 
 /* ---------- copie de sécurité vers le Google Sheet ---------- */
 const SYK='atody_sync';
+const DEFAULT_SERVER='https://script.google.com/macros/s/AKfycbw1wFY3GnxcDM5klOUvIHaI029YVvhZG7ftlM4qBcTvorKM88b7vKTSvGY4B2yif5U/exec';
+const SYERR={code_manquant:'Entre ton code d’accès.',code_inconnu:'Ce code n’existe pas. Vérifie les lettres et les tirets.',code_deja_utilise:'Ce code est déjà utilisé sur un autre appareil. Demande un nouveau code à Stephen.',code_desactive:'Ce code a été désactivé.',non_active:'Cet appareil n’est pas encore activé : entre le code et appuie sur « Activer cet appareil ».',appareil_inconnu:'Appareil non reconnu.',serveur_non_prepare:'Le serveur n’est pas encore prêt (l’onglet Codes manque).'};
 const syncCfg=()=>{try{return JSON.parse(localStorage.getItem(SYK))||{}}catch(e){return{}}};
 const syncSet=o=>{try{localStorage.setItem(SYK,JSON.stringify({...syncCfg(),...o}))}catch(e){}};
 async function syncCall(body){const c=syncCfg();if(!c.url||!c.token)throw new Error('Adresse ou code manquant');
  const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),25000);
  try{const r=await fetch(c.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...body,token:c.token,device:{id:c.dev,nom:c.name||''}}),redirect:'follow',signal:ctl.signal});
-  const j=await r.json();if(!j.ok)throw new Error(j.erreur==='acces_refuse'?'Code secret refusé':(j.erreur||'Erreur du serveur'));return j}finally{clearTimeout(tm)}}
+  const j=await r.json();if(!j.ok)throw new Error(SYERR[j.erreur]||j.erreur||'Erreur du serveur');return j}finally{clearTimeout(tm)}}
 let lastSent='',syncBusy=false;
 async function syncBackup(force){if(training||syncBusy)return false;const c=syncCfg();if(!c.url||!c.token||!REAL.setup)return false;
  const js=JSON.stringify(REAL);if(!force&&js===lastSent)return false;syncBusy=true;
@@ -1826,12 +1828,12 @@ async function syncBackup(force){if(training||syncBusy)return false;const c=sync
 setInterval(()=>{if(navigator.onLine!==false)syncBackup(false)},180000);
 window.addEventListener('online',()=>syncBackup(false));
 function syncCard(){if(training||role!=='admin')return '';const c=syncCfg(),ok=c.ok?new Date(c.ok):null;
- const st=!c.url?'Pas encore branché.':c.err?`<span class="neg">Dernier essai raté : ${esc(c.err)}</span>`:ok?`Dernière copie : <b>${ok.toLocaleDateString('fr-FR')} ${ok.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</b>`:'Branché, aucune copie envoyée pour l’instant.';
- return `<div class="card"><h3>Copie sur Google Sheet</h3><p class="note" style="margin:4px 0 10px">Une copie complète des données part toute seule vers le Google Sheet, toutes les 3 minutes quand il y a du nouveau et que le téléphone ou l’ordinateur a internet. ${st}</p>
- <div class="field"><label for="syu">Adresse du serveur</label><input id="syu" value="${esc(c.url||'')}" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off"></div>
- <div class="field"><label for="syt">Code secret</label><input id="syt" type="password" value="${esc(c.token||'')}" autocomplete="off"></div>
+ const st=!c.act?'Pas encore activé.':c.err?`<span class="neg">Dernier essai raté : ${esc(c.err)}</span>`:ok?`Dernière copie : <b>${ok.toLocaleDateString('fr-FR')} ${ok.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</b>`:'Branché, aucune copie envoyée pour l’instant.';
+ return `<div class="card"><h3>Connexion au serveur</h3><p class="note" style="margin:4px 0 10px">Une copie complète des données part toute seule vers le Google Sheet, toutes les 3 minutes quand il y a du nouveau et que le téléphone ou l’ordinateur a internet. ${st}</p>
+ <div class="field"><label for="syu">Adresse du serveur</label><input id="syu" value="${esc(c.url||DEFAULT_SERVER)}" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off"></div>
+ <div class="field"><label for="syt">Code d’accès (une seule fois, un seul appareil)</label><input id="syt" value="${esc(c.token||'')}" placeholder="XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
  <div class="field"><label for="syn">Nom de cet appareil</label><input id="syn" value="${esc(c.name||'')}" placeholder="ex. PC de Maman"></div>
- <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn g s" data-a="sysave">Enregistrer et tester</button><button class="btn l s" data-a="sybackup">Envoyer une copie maintenant</button><button class="btn l s" data-a="syrestore">Restaurer depuis le Sheet</button></div><div class="err" id="syer"></div></div>`}
+ <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn g s" data-a="sysave">${c.act?'Mettre à jour':'Activer cet appareil'}</button><button class="btn l s" data-a="sybackup">Envoyer une copie maintenant</button><button class="btn l s" data-a="syrestore">Restaurer depuis le Sheet</button></div><div class="err" id="syer"></div></div>`}
 function cancelModal(title){modal(`<h3>${title}</h3><p class="note">Rien n’est effacé : l’élément reste visible, barré, et ne compte plus dans les chiffres.</p><div class="field"><label for="why">Pourquoi ? (facultatif)</label><input id="why" placeholder="ex. erreur de saisie"></div><div class="row"><button class="btn l" data-a="mclose">Garder</button><button class="btn r" data-a="doCancel">Oui, annuler</button></div>`)}
 
 /* ---------- actions ---------- */
@@ -1882,11 +1884,11 @@ document.addEventListener('click',e=>{
   if(am<=0){er.textContent='Entre un montant.';return}if(am<pd){er.textContent='Ce client a déjà payé '+ar(pd)+' : le montant ne peut pas être plus bas.';return}
   if(!why){er.textContent='Écris pourquoi tu corriges.';return}if(am===i.amt){er.textContent='Rien n’a changé.';return}
   logAdd('Ancien solde de '+cname(i.cl)+' : '+ar(i.amt)+' → '+ar(am),why);i.amt=am;close();toast('Corrigé');render();return}
- case 'sysave':{const u=val('syu').trim(),t2=val('syt').trim(),n=val('syn').trim(),er=document.getElementById('syer');
+ case 'sysave':{const u=val('syu').trim(),t2=val('syt').trim().toUpperCase(),n=val('syn').trim(),er=document.getElementById('syer');
   if(!/^https:\/\/script\.google\.com\/macros\/s\/[^\s]+\/exec$/.test(u)){er.textContent='L’adresse doit ressembler à https://script.google.com/macros/s/…/exec';return}
-  if(!t2){er.textContent='Entre le code secret.';return}
-  syncSet({url:u,token:t2,name:n,dev:syncCfg().dev||uid()});er.textContent='Test en cours…';
-  syncCall({action:'ping'}).then(()=>{syncSet({err:''});toast('Serveur joint ✓');return syncBackup(true)}).then(()=>render()).catch(e=>{syncSet({err:String(e.message||e)});render();const x=document.getElementById('syer');if(x)x.textContent='Connexion impossible : '+(e.message||e)});return}
+  if(!t2){er.textContent='Entre ton code d’accès.';return}
+  syncSet({url:u,token:t2,name:n,dev:syncCfg().dev||uid()});er.textContent='Activation en cours…';
+  syncCall({action:'activer'}).then(j=>{syncSet({err:'',act:1,qui:j.nom||''});toast('Appareil activé ✓');return syncBackup(true)}).then(()=>render()).catch(e=>{syncSet({err:String(e.message||e)});render();const x=document.getElementById('syer');if(x)x.textContent='Connexion impossible : '+(e.message||e)});return}
  case 'sybackup':{const er=document.getElementById('syer');er.textContent='Envoi…';syncBackup(true).then(r=>{toast(r?'Copie envoyée ✓':'Copie non envoyée');render()});return}
  case 'syrestore':{modal(`<h3>Restaurer depuis le Sheet ?</h3><p class="note">Cela remplace les données de cet appareil par la dernière copie du Sheet. À utiliser sur un appareil neuf ou vide.</p><div class="err" id="ser"></div><div class="row"><button class="btn l" data-a="mclose">${t('cancel')}</button><button class="btn r" data-a="dorestore">Oui, restaurer</button></div>`);return}
  case 'dorestore':{const er=document.getElementById('ser');er.textContent='Lecture…';
