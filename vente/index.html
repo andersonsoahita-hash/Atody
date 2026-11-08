@@ -1685,7 +1685,9 @@ async function finishLogin(code){const g=syncCfg();
  if(!REAL.setup&&g.role==='admin'&&!window.ATODY_VENTE){view='setup';render()}
  if(g.role==='admin')syncBackup(true)}
 const keepMe=()=>{if(me&&!REAL.users.some(x=>x.id===me.id))REAL.users.push(me)};
-function authGate(){const g=syncCfg();if(!g.act){showEmailGate();return}if(!g.perso){showNewCodeGate();return}const U=REAL.users.filter(u=>u.on!==false);if(!REAL.users.length){showEmailGate();return}
+function authGate(){const g=syncCfg();if(!g.act){showEmailGate();return}if(!g.perso){showNewCodeGate();return}
+ if(g.email){let u=REAL.users.find(x=>x.email===g.email&&x.on!==false);if(!u)u=makeLocalUser(g.qui||g.email.split('@')[0],g.role,g.email,uid()+uid());signIn(u);return}   /* appareil déjà reconnu par le serveur : on ne redemande pas le code */
+ const U=REAL.users.filter(u=>u.on!==false);if(!REAL.users.length){showEmailGate();return}
  let sid='';try{sid=localStorage.getItem(SK)||''}catch(e){}const u=U.find(x=>x.id===sid);if(u){signIn(u);return}authLogin()}
 function signIn(u,hello){me=u;role=(!window.ATODY_VENTE&&u.role==='admin')?'admin':'cash';try{localStorage.setItem(SK,u.id)}catch(e){}hideAuth();stack=[];view='home';sub=null;selInv.clear();render();if(hello)toast('Bonjour '+u.name)}
 function authCreate(){showAuth(`<div class="authc"><div class="alogo">${LOGO}</div><h1>Bienvenue sur ATODY</h1><p>Crée le premier compte, celui de l’administrateur. Choisis un code secret de 4 à 6 chiffres.</p><div class="field"><label for="an">Prénom</label><input id="an" autocomplete="off"></div><div class="field"><label for="ap">Code secret</label><input id="ap" type="password" maxlength="40" autocomplete="off" autocapitalize="none" spellcheck="false"></div><div class="field"><label for="ap2">Répète le code</label><input id="ap2" type="password" maxlength="40" autocomplete="off" autocapitalize="none" spellcheck="false"></div><div class="err" id="aerr"></div><button class="big" data-a="authmk">Créer et commencer</button><small class="aby">by Stephen</small></div>`);setTimeout(()=>{const e=document.getElementById('an');e&&e.focus()},120)}
@@ -2182,7 +2184,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 window.addEventListener('pagehide',persist);
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 try{if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
-const APP_VERSION='2026.11.08-k';
+const APP_VERSION='2026.11.08-l';
 function showUpd(){let seen='';try{seen=localStorage.getItem('atodyv_ver')||''}catch(e){}
  try{localStorage.setItem('atodyv_ver',APP_VERSION)}catch(e){}
  if(!seen||seen===APP_VERSION)return;const sp=document.getElementById('splash');if(!sp)return;
