@@ -806,6 +806,7 @@ body{background:linear-gradient(160deg,var(--bg),color-mix(in srgb,var(--c4) 9%,
 .usr{flex-wrap:wrap}.usr span:nth-child(2){flex:1 1 0;min-width:0;overflow-wrap:anywhere}.usr .ub{flex:0 0 100%!important;justify-content:flex-start!important;padding-left:52px}.usr .ub:empty{display:none}
 /* appareils */
 .usr .devs{flex:0 0 100%;display:grid;gap:6px;padding-left:52px}.usr .dv{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px}.usr .dv>span{flex:1;min-width:0;overflow-wrap:anywhere}.usr .dv small{display:block;color:var(--muted)}.usr .dv button{flex:none;width:auto}
+.banner .row{flex-wrap:wrap}.banner.blue button{border-color:var(--navy2)}
 </style>
 
 <div class="splash" id="splash"><div class="sp-in"><div class="sp-streaks" aria-hidden="true"></div>
@@ -988,7 +989,7 @@ function shell(body){
  <span class="seg"><button class="${lang==='fr'?'on':''}" data-a="lang" data-k="fr">FR</button><button class="${lang==='mg'?'on':''}" data-a="lang" data-k="mg">MG</button></span>
  <button class="chip ic" data-a="theme" aria-label="Thème clair ou sombre">${ic(effDark()?'sun':'moon')}</button>
  ${role==='admin'?`<button class="chip ic" data-a="goSet" aria-label="${t('set')}">${ic('set')}</button>`:''}<button class="chip ic" data-a="logout" aria-label="Changer d’utilisateur" title="${me?esc(me.name):''}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button></div></div>
- ${training?`<div class="banner"><span>${t('trainOn')}</span><span class="row" style="flex:none"><button data-a="trainReset">${t('trainReset')}</button><button data-a="trainOff">${t('trainOff')}</button></span></div>`:''}
+ ${training?`<div class="banner blue"><span>${t('trainOn')}</span><span class="row" style="flex:none"><button data-a="trainZero">Mettre à vide</button><button data-a="trainCopy">Reprendre l’état actuel</button><button data-a="trainOff">Quitter le mode formation</button></span></div>`:''}
  ${role==='cash'&&!window.ATODY_VENTE?`<div class="banner blue"><span>Aperçu de l’application caissier : ventes et encaissements, sans trésorerie ni bilan.</span><button data-a="roleAdmin" style="border-color:var(--navy2)">Quitter l’aperçu</button></div>`:''}
  <div class="view">${body}</div></div></main>
  <nav class="tabs" style="${nav.length<2?'display:none':''};grid-template-columns:repeat(${nav.length},1fr)">${nav.map(([k,i])=>`<button class="${view===k?'on':''}" data-a="nav" data-k="${k}">${ic(i)}${k==='home'&&role==='cash'?'Caisse':t(k)}</button>`).join('')}</nav>${selBar()}<button class="asfab" data-a="askopen" data-v="${view}" aria-label="AS : poser une question"><b>AS</b><span>Questions</span></button></div>`}
@@ -1768,7 +1769,7 @@ function swSave(){const w=sw,er=document.getElementById('swer');
 function vSet(){
  const c=cur();
  return setupCard()+usersCard()+syncCard()+resetCard()+`<div class="card"><h3>Mode formation</h3><div class="sub">Des données d’exemple pour s’entraîner sans risque. Rien ne touche les vraies données, et tout s’efface en quittant.</div>
- <div class="row"><button class="btn ${training?'l':'g'}" data-a="${training?'trainOff':'trainOn'}">${training?'Quitter le mode formation':'Démarrer le mode formation'}</button>${training?`<button class="btn l" data-a="trainReset">${t('trainReset')}</button>`:''}</div></div>
+ <div class="row"><button class="btn ${training?'l':'g'}" data-a="${training?'trainOff':'trainOn'}">${training?'Quitter le mode formation':'Démarrer le mode formation'}</button>${training?`<button class="btn l" data-a="trainZero">Mettre à vide</button><button class="btn l" data-a="trainCopy">Reprendre l’état actuel</button>`:''}</div></div>
  <h2>Apparence et langue</h2><div class="card"><div class="setrow"><span>Thème</span><span class="seg"><button class="${theme==='auto'?'on':''}" data-a="setTheme" data-k="auto">Auto</button><button class="${theme==='light'?'on':''}" data-a="setTheme" data-k="light">Clair</button><button class="${theme==='dark'?'on':''}" data-a="setTheme" data-k="dark">Sombre</button></span></div>
  <div class="setrow"><span>${t('lang')}</span><span class="seg"><button class="${lang==='fr'?'on':''}" data-a="lang" data-k="fr">Français</button><button class="${lang==='mg'?'on':''}" data-a="lang" data-k="mg">Malagasy</button></span></div></div>
  <h2>${t('prices')} (Ar)</h2><div class="card">${SIZES.map(k=>`<div class="setrow"><b>Taille ${k}</b><input inputmode="numeric" data-price="${k}" value="${c.prices[k]}" aria-label="${k}"></div>`).join('')}<p class="note">Un changement de prix ne modifie jamais les anciennes factures.</p></div>
@@ -2184,7 +2185,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 window.addEventListener('pagehide',persist);
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 try{if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
-const APP_VERSION='2026.11.08-l';
+const APP_VERSION='2026.11.08-m';
 function showUpd(){let seen='';try{seen=localStorage.getItem('atodyv_ver')||''}catch(e){}
  try{localStorage.setItem('atodyv_ver',APP_VERSION)}catch(e){}
  if(!seen||seen===APP_VERSION)return;const sp=document.getElementById('splash');if(!sp)return;
