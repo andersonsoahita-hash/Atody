@@ -750,7 +750,7 @@ body{background:linear-gradient(160deg,var(--bg),color-mix(in srgb,var(--c4) 9%,
 
 /* ===== v14 : démarrage réel ===== */
 .auth{position:fixed;inset:0;z-index:90;display:grid;place-items:center;overflow-y:auto;padding:24px max(16px,env(safe-area-inset-left,0px));background:radial-gradient(circle at 50% 30%,rgba(255,184,23,.16),transparent 50%),linear-gradient(160deg,#2A241A,#17130C);color:#F7EFD8}
-.authc{width:min(440px,100%);text-align:center}
+.noapp #root{display:none!important}.authc{width:min(440px,100%);text-align:center}.authc #gc{letter-spacing:.14em;text-transform:uppercase}.authc #ge{letter-spacing:0;text-align:left}.authc .link{background:none;border:0;color:#E8D9AE;text-decoration:underline;margin:14px auto 0;display:block;font:inherit;cursor:pointer;min-height:44px}
 .authc h1{font-family:var(--fd);font-weight:400;font-size:28px;margin:10px 0 6px}
 .authc p{color:#E8D9AE;margin:0 0 16px}
 .authc .field{text-align:left}.authc .field label{color:#E8D9AE}
@@ -1650,11 +1650,19 @@ function vDue(){const l=liveInv().filter(i=>rest(i)>0).sort(byDate);
 function hp(pin,salt){let h1=0xdeadbeef^salt.length,h2=0x41c6ce57^salt.length;const z=salt+':'+pin;for(let i=0;i<z.length;i++){const c=z.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return (4294967296*(2097151&h2)+(h1>>>0)).toString(36)}
 let me=null,authSel='',authTry=0,authLock=0;const SK='atody_sess';
 const meName=()=>me?me.name:((cur().people||[])[0]||'');
-function showAuth(h){let a=document.getElementById('auth');if(!a){a=document.createElement('div');a.id='auth';a.className='auth';document.body.appendChild(a)}a.innerHTML=h}
-function hideAuth(){const a=document.getElementById('auth');a&&a.remove()}
-function showVenteGate(){const c=syncCfg(),st=c.statut==='bloque'?'<span class="neg">Accès refusé. Contacte Stephen.</span>':c.req?`Demande envoyée${c.ref?' · référence <b>'+esc(c.ref)+'</b>':''}. Stephen doit la valider.`:'Écris ton nom : Stephen reçoit ta demande et la valide.';
- showAuth(`<div class="authc"><div class="alogo">${LOGO}</div><h1>ATODY Ventes</h1><p>${st}</p><div class="field"><label for="syu">Adresse du serveur</label><input id="syu" value="${esc(c.url||DEFAULT_SERVER)}" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off"></div><div class="field"><label for="syn">Ton nom</label><input id="syn" value="${esc(c.name||'')}" autocomplete="off"></div><div class="err" id="syer"></div>${c.req?'<button class="btn g" style="width:100%" data-a="systat">Vérifier ma demande</button>':'<button class="btn g" style="width:100%" data-a="syreq">Demander l’accès</button>'}<div class="aby">by Stephen</div></div>`)}
-function authGate(){if(window.ATODY_VENTE&&!syncCfg().act){showVenteGate();return}const U=REAL.users.filter(u=>u.on!==false);if(!REAL.users.length){authCreate();return}
+function showAuth(h){document.body.classList.add('noapp');let a=document.getElementById('auth');if(!a){a=document.createElement('div');a.id='auth';a.className='auth';document.body.appendChild(a)}a.innerHTML=h}
+function hideAuth(){document.body.classList.remove('noapp');const a=document.getElementById('auth');a&&a.remove()}
+function showVenteGate(msg){const c=syncCfg(),st=c.statut==='bloque'?'<span class="neg">Accès refusé. Contacte Stephen.</span>':c.req?`Demande envoyée${c.ref?' · référence <b>'+esc(c.ref)+'</b>':''}. Stephen doit la valider.`:'Inscris-toi : Stephen reçoit ta demande et la valide.';
+ showAuth(`<div class="authc"><div class="alogo">${LOGO}</div><h1>ATODY Ventes</h1><p>${st}</p>${c.req?'':`<div class="field"><label for="vn">Nom</label><input id="vn" value="${esc(c.vnom||'')}" autocomplete="off" style="letter-spacing:0;text-align:left"></div><div class="field"><label for="vp">Prénoms</label><input id="vp" value="${esc(c.vpre||'')}" autocomplete="off" style="letter-spacing:0;text-align:left"></div><div class="field"><label for="vm">Adresse e-mail</label><input id="vm" data-go="vreq" type="email" inputmode="email" value="${esc(c.vmail||'')}" autocomplete="off" autocapitalize="none" spellcheck="false" style="letter-spacing:0;text-align:left"></div>`}<div class="err" id="syer">${msg||''}</div>${c.req?'<button class="btn g" style="width:100%" data-a="systat">Vérifier ma demande</button>':'<button class="btn g" style="width:100%" data-a="vreq">S’inscrire</button>'}<div class="aby">by Stephen</div></div>`)}
+function showCodeGate(msg){showAuth(`<div class="authc"><div class="alogo">${LOGO}</div><h1>ATODY</h1><p>Entre ton code d’accès.</p><div class="field"><label for="gc">Code d’accès</label><input id="gc" data-go="gcode" placeholder="XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false"></div><div class="err" id="gerr">${msg||''}</div><button class="big" data-a="gcode">Entrer</button><button class="link" data-a="gtomail">J’ai déjà configuré mon compte</button><small class="aby">by Stephen</small></div>`);setTimeout(()=>{const e=document.getElementById('gc');e&&e.focus()},120)}
+function showProfileGate(msg){const c=syncCfg();showAuth(`<div class="authc"><div class="alogo">${LOGO}</div><h1>Bonjour${c.qui?' '+esc(c.qui):''}</h1><p>Choisis ton adresse e-mail et ton code personnel. Le code d’accès de départ ne servira plus ensuite.</p><div class="field"><label for="ge">Adresse e-mail</label><input id="ge" type="email" inputmode="email" autocomplete="off" autocapitalize="none" spellcheck="false"></div><div class="field"><label for="gp">Code personnel (6 chiffres)</label><input id="gp" type="password" inputmode="numeric" maxlength="6" autocomplete="off"></div><div class="field"><label for="gp2">Répète le code</label><input id="gp2" data-go="gprofil" type="password" inputmode="numeric" maxlength="6" autocomplete="off"></div><div class="err" id="gerr">${msg||''}</div><button class="big" data-a="gprofil">Enregistrer et entrer</button><small class="aby">by Stephen</small></div>`);setTimeout(()=>{const e=document.getElementById('ge');e&&e.focus()},120)}
+function showMailGate(msg){showAuth(`<div class="authc"><div class="alogo">${LOGO}</div><h1>ATODY</h1><p>Entre ton adresse e-mail et ton code personnel.</p><div class="field"><label for="ge">Adresse e-mail</label><input id="ge" type="email" inputmode="email" autocomplete="off" autocapitalize="none" spellcheck="false"></div><div class="field"><label for="gp">Code personnel</label><input id="gp" data-go="gmail" type="password" inputmode="numeric" maxlength="6" autocomplete="off"></div><div class="err" id="gerr">${msg||''}</div><button class="big" data-a="gmail">Entrer</button><button class="link" data-a="gtocode">J’ai un code d’accès de départ</button><small class="aby">by Stephen</small></div>`);setTimeout(()=>{const e=document.getElementById('ge');e&&e.focus()},120)}
+function makeLocalUser(name,role,email,code){let u=REAL.users.find(x=>x.email&&x.email===email)||REAL.users.find(x=>x.name.toLowerCase()===String(name).toLowerCase());
+ if(!u){u={id:uid(),name:name||email.split('@')[0],on:true};REAL.users.push(u)}
+ const salt=uid();u.email=email;u.role=role==='admin'?'admin':'cash';u.salt=salt;u.h=hp(code,salt);u.on=true;if(!REAL.people.includes(u.name))REAL.people.push(u.name);persist();return u}
+function authGate(){if(window.ATODY_VENTE&&!syncCfg().act){showVenteGate();return}
+ if(!window.ATODY_VENTE){const g=syncCfg();if(!g.act){showCodeGate();return}if(!g.perso){showProfileGate();return}}
+ const U=REAL.users.filter(u=>u.on!==false);if(!REAL.users.length){showMailGate();return}
  let sid='';try{sid=localStorage.getItem(SK)||''}catch(e){}const u=U.find(x=>x.id===sid);if(u){signIn(u);return}authLogin()}
 function signIn(u,hello){me=u;role=(!window.ATODY_VENTE&&u.role==='admin')?'admin':'cash';try{localStorage.setItem(SK,u.id)}catch(e){}hideAuth();stack=[];view='home';sub=null;selInv.clear();render();if(hello)toast('Bonjour '+u.name)}
 function authCreate(){showAuth(`<div class="authc"><div class="alogo">${LOGO}</div><h1>Bienvenue sur ATODY</h1><p>Crée le premier compte, celui de l’administrateur. Choisis un code secret de 4 à 6 chiffres.</p><div class="field"><label for="an">Prénom</label><input id="an" autocomplete="off"></div><div class="field"><label for="ap">Code secret</label><input id="ap" type="password" inputmode="numeric" maxlength="6" autocomplete="off"></div><div class="field"><label for="ap2">Répète le code</label><input id="ap2" type="password" inputmode="numeric" maxlength="6" autocomplete="off"></div><div class="err" id="aerr"></div><button class="big" data-a="authmk">Créer et commencer</button><small class="aby">by Stephen</small></div>`);setTimeout(()=>{const e=document.getElementById('an');e&&e.focus()},120)}
@@ -1815,7 +1823,7 @@ function oldModal(id){const i=cur().inv.find(x=>x.id===id),pd=vp(i).reduce((a,p)
 /* ---------- copie de sécurité vers le Google Sheet ---------- */
 const SYK='atody_sync';
 const DEFAULT_SERVER='https://script.google.com/macros/s/AKfycbxclbzVija-N6OoS6o5Qz6lcXxBav9WqzysE5DIw1DQ4yMQrstebpv-bxu65Q1S0Q/exec';
-const SYERR={code_manquant:'Entre ton code d’accès.',code_inconnu:'Ce code n’existe pas. Vérifie les lettres et les tirets.',code_complet:'Ce code est déjà utilisé sur le nombre maximum d’appareils. Demande un autre code à Stephen.',code_desactive:'Ce code a été désactivé.',non_active:'Cet appareil n’est pas encore activé.',acces_retire:'Ton accès a été retiré par Stephen.',role_insuffisant:'Ton accès ne permet pas cette action.',nom_manquant:'Écris ton nom pour faire la demande.',trop_de_demandes:'Trop de demandes en attente. Préviens Stephen.',appareil_inconnu:'Appareil non reconnu.'};
+const SYERR={code_deja_perso:'Ce code de départ a déjà été remplacé.',email_invalide:'Adresse e-mail invalide.',code_perso_invalide:'Le code doit avoir 6 chiffres.',email_pris:'Cette adresse e-mail est déjà utilisée.',deja_perso:'Ce compte est déjà configuré.',identifiants:'E-mail ou code incorrect.',trop_essais:'Trop d’essais. Réessaie dans 15 minutes.',code_manquant:'Entre ton code d’accès.',code_inconnu:'Ce code n’existe pas. Vérifie les lettres et les tirets.',code_complet:'Ce code est déjà utilisé sur le nombre maximum d’appareils. Demande un autre code à Stephen.',code_desactive:'Ce code a été désactivé.',non_active:'Cet appareil n’est pas encore activé.',acces_retire:'Ton accès a été retiré par Stephen.',role_insuffisant:'Ton accès ne permet pas cette action.',nom_manquant:'Écris ton nom pour faire la demande.',trop_de_demandes:'Trop de demandes en attente. Préviens Stephen.',appareil_inconnu:'Appareil non reconnu.'};
 const syncCfg=()=>{try{return JSON.parse(localStorage.getItem(SYK))||{}}catch(e){return{}}};
 const syncSet=o=>{try{localStorage.setItem(SYK,JSON.stringify({...syncCfg(),...o}))}catch(e){}};
 const newDev=()=>{try{if(crypto.randomUUID)return crypto.randomUUID().replace(/-/g,'')}catch(e){}return uid()+uid()+uid()+uid()};
@@ -1936,6 +1944,30 @@ document.addEventListener('click',e=>{
  case 'encaisser':encModal(b.dataset.id,false);return;
  case 'logout':me=null;try{localStorage.removeItem(SK)}catch(e){}authSel='';stack=[];selInv.clear();authLogin();return;
  case 'authpick':authSel=b.dataset.id;authLogin();return;
+ case 'gtomail':showMailGate();return;
+ case 'vreq':{const n=val('vn').trim(),p=val('vp').trim(),em=val('vm').trim().toLowerCase(),er=document.getElementById('syer');
+  if(!n||!p){er.textContent='Écris ton nom et tes prénoms.';return}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)){er.textContent='Adresse e-mail invalide.';return}
+  const g=syncCfg();syncSet({url:g.url||DEFAULT_SERVER,dev:g.dev||newDev(),name:p+' '+n,vnom:n,vpre:p,vmail:em});er.textContent='Envoi de la demande…';
+  syncCall({action:'demander',nom:(p+' '+n).slice(0,60),email:em}).then(j=>{syncSet({err:'',req:1,ref:j.reference||'',statut:j.statut});if(j.statut==='ok')return syncCall({action:'statut'}).then(k=>syncSet({act:1,role:k.role}));toast(j.statut==='bloque'?'Accès retiré':'Demande envoyée')})
+   .then(()=>showVenteGate()).catch(e=>{const x=document.getElementById('syer');if(x)x.textContent=/fetch|network|Failed|abort/i.test(String(e.message||e))?'Pas de connexion internet. Réessaie.':(e.message||e)});return}
+ case 'gtocode':showCodeGate();return;
+ case 'gcode':{const code=val('gc').trim().toUpperCase(),er=document.getElementById('gerr');if(!code){er.textContent='Entre ton code d’accès.';return}
+  er.textContent='Vérification…';const g=syncCfg();syncSet({url:g.url||DEFAULT_SERVER,dev:g.dev||newDev()});
+  syncCall({action:'activer',code}).then(j=>{syncSet({err:'',act:1,role:j.role,qui:j.nom||'',statut:'ok',perso:j.perso?1:0});if(j.perso){showMailGate('Ce compte est déjà configuré. Entre ton e-mail et ton code personnel.')}else showProfileGate()})
+   .catch(e=>{const m=String(e.message||e);if(m==='code_deja_perso'||/déjà été remplacé/.test(m)){showMailGate('Ce code de départ a déjà été remplacé. Entre ton e-mail et ton code personnel.');return}const x=document.getElementById('gerr');if(x)x.textContent=/fetch|network|Failed|abort/i.test(m)?'Pas de connexion internet. Réessaie.':m});return}
+ case 'gprofil':{const em=val('ge').trim().toLowerCase(),p=val('gp'),p2=val('gp2'),er=document.getElementById('gerr');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)){er.textContent='Adresse e-mail invalide.';return}
+  if(!/^\d{6}$/.test(p)){er.textContent='Le code doit avoir 6 chiffres.';return}if(p!==p2){er.textContent='Les deux codes ne sont pas identiques.';return}
+  er.textContent='Enregistrement…';
+  syncCall({action:'profil',email:em,nouveau:p}).then(j=>{const g=syncCfg();syncSet({perso:1,email:em,err:''});const u=makeLocalUser(g.qui||em.split('@')[0],g.role,em,p);signIn(u,true);if(!REAL.setup){view='setup';render()}syncBackup(true)})
+   .catch(e=>{const x=document.getElementById('gerr');if(x)x.textContent=/fetch|network|Failed|abort/i.test(String(e.message||e))?'Pas de connexion internet. Réessaie.':(e.message||e)});return}
+ case 'gmail':{const em=val('ge').trim().toLowerCase(),p=val('gp'),er=document.getElementById('gerr');
+  if(!em||!p){er.textContent='Entre ton e-mail et ton code.';return}er.textContent='Vérification…';const g=syncCfg();syncSet({url:g.url||DEFAULT_SERVER,dev:g.dev||newDev()});
+  syncCall({action:'connexion',email:em,code:p}).then(async j=>{syncSet({err:'',act:1,perso:1,role:j.role,qui:j.nom||'',statut:'ok',email:em});
+    if(!REAL.setup&&j.role==='admin'){try{const r=await syncCall({action:'restore'});if(r&&r.json){const d=JSON.parse(r.json);if(d&&Array.isArray(d.inv)&&Array.isArray(d.clients)){REAL=mig(d);lastSent=r.json}}}catch(e){}}
+    const u=makeLocalUser(j.nom||em.split('@')[0],j.role,em,p);signIn(u,true);if(!REAL.setup){view='setup';render()}})
+   .catch(e=>{const x=document.getElementById('gerr');if(x)x.textContent=/fetch|network|Failed|abort/i.test(String(e.message||e))?'Pas de connexion internet. Réessaie.':(e.message||e)});return}
  case 'authgo':{const u=REAL.users.find(x=>x.id===authSel),er=document.getElementById('aerr'),pin=val('apin');
   if(Date.now()<authLock){er.textContent='Trop d’essais. Réessaie dans quelques secondes.';return}
   if(u&&hp(pin,u.salt)===u.h){authTry=0;signIn(u,true);return}
@@ -2068,6 +2100,7 @@ document.addEventListener('change',e=>{const el=e.target;if(el&&el.dataset&&el.d
 document.addEventListener('input',e=>{const el=e.target;if(el.dataset&&el.dataset.qp){qpv[el.dataset.qp]=el.value}
  if(el.dataset&&el.dataset.mp){const t0=[...document.querySelectorAll('[data-mp]')].reduce((a,x)=>a+num(x.value),0),m=document.getElementById('mpt');if(m)m.textContent=ar(t0)}});
 document.addEventListener('keydown',e=>{const id=e.target&&e.target.id;if(e.key!=='Enter')return;
+ if(e.target.dataset&&e.target.dataset.go){e.preventDefault();const b=document.querySelector('[data-a='+e.target.dataset.go+']');b&&b.click();return}
  if(id==='apin'){e.preventDefault();document.querySelector('[data-a=authgo]').click()}
  else if(id==='ap2'||id==='ap'&&!document.getElementById('ap2')){e.preventDefault();const b=document.querySelector('[data-a=authmk]');b&&b.click()}
  else if(e.target.dataset&&e.target.dataset.qp){e.preventDefault();const b=document.querySelector('[data-a=qpay][data-id="'+e.target.dataset.qp+'"]');b&&b.click()}});
@@ -2085,7 +2118,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 window.addEventListener('pagehide',persist);
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 try{if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
-const APP_VERSION='2026.11.08-e';
+const APP_VERSION='2026.11.08-f';
 function showUpd(){let seen='';try{seen=localStorage.getItem('atody_ver')||''}catch(e){}
  try{localStorage.setItem('atody_ver',APP_VERSION)}catch(e){}
  if(!seen||seen===APP_VERSION)return;const sp=document.getElementById('splash');if(!sp)return;
