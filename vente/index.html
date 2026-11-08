@@ -1670,9 +1670,8 @@ const gHead=p=>`<div class="alogo">${LOGO}</div><h1>ATODY${window.ATODY_VENTE?' 
 const gFocus=id=>setTimeout(()=>{const e=document.getElementById(id);e&&e.focus()},120);
 const gInit=()=>{const g=syncCfg();syncSet({url:g.url||DEFAULT_SERVER,dev:g.dev||newDev()})};
 function showEmailGate(msg){const g=syncCfg();gEmail=gEmail||g.email||'';
- showAuth(`<div class="authc">${gHead('Entre ton adresse e-mail.')}${gIn('ge','Adresse e-mail',GE+' data-go="gnext" value="'+esc(gEmail)+'"')}<div class="err" id="gerr">${msg||''}</div><button class="big" data-a="gnext">Continuer</button><button class="link" data-a="greg">Pas encore d’accès ? Faire une demande</button>${g.vreq?'<button class="link" data-a="gstat">Vérifier ma demande</button>':''}<small class="aby">by Stephen</small></div>`);gFocus('ge')}
-function showCodeStep(step,msg){gStep=step;const mail=step==='mail';
- showAuth(`<div class="authc">${gHead(mail?`Un code à usage unique a été envoyé à <b>${esc(gEmail)}</b>. Entre-le ici.`:'Entre ton code personnel.')}${mail?gIn('gc','Code reçu par e-mail','data-go="gcode" style="text-transform:uppercase" placeholder="XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false"'):gIn('gc','Code personnel','data-go="gcode" type="password" maxlength="64" autocomplete="off" autocapitalize="none" spellcheck="false"')}<div class="err" id="gerr">${msg||''}</div><button class="big" data-a="gcode">Entrer</button><button class="link" data-a="gresend">${mail?'Renvoyer un code':'Code oublié ? Recevoir un code par e-mail'}</button><button class="link" data-a="gback">Changer d’adresse</button><small class="aby">by Stephen</small></div>`);gFocus('gc')}
+ showAuth(`<div class="authc">${gHead('Connecte-toi avec ton compte.')}${gIn('ge','Adresse e-mail',GE+' data-go="glogin" value="'+esc(gEmail)+'"')}${gIn('gc','Code','data-go="glogin" type="password" maxlength="64" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Code personnel ou code reçu par e-mail"')}<div class="err" id="gerr">${msg||''}</div><button class="big" data-a="glogin">Entrer</button><button class="link" data-a="gmail">Code oublié, ou pas encore reçu ? Recevoir un code par e-mail</button><button class="link" data-a="greg">Pas encore de compte ? Faire une demande</button>${g.vreq?'<button class="link" data-a="gstat">Vérifier ma demande</button>':''}<small class="aby">by Stephen</small></div>`);gFocus(gEmail?'gc':'ge')}
+function showCodeStep(step,msg){showEmailGate(msg)}
 function showNewCodeGate(msg){const g=syncCfg();
  showAuth(`<div class="authc">${gHead('Bonjour'+(g.qui?' '+esc(g.qui):'')+'. Choisis ton code personnel (6 caractères minimum : lettres, chiffres ou symboles) : c’est lui que tu utiliseras ensuite. Le code reçu par e-mail ne marchera plus.')}${gIn('gp','Code personnel','type="password" maxlength="64" autocomplete="off" autocapitalize="none" spellcheck="false"')}${gIn('gp2','Répète le code','data-go="gnew" type="password" maxlength="64" autocomplete="off" autocapitalize="none" spellcheck="false"')}<div class="err" id="gerr">${msg||''}</div><button class="big" data-a="gnew">Enregistrer et entrer</button><small class="aby">by Stephen</small></div>`);gFocus('gp')}
 function showRegGate(msg){const g=syncCfg();
@@ -1993,6 +1992,14 @@ document.addEventListener('click',e=>{
  case 'authpick':authSel=b.dataset.id;authLogin();return;
  case 'gback':gEmail='';showEmailGate();return;
  case 'greg':showRegGate();return;
+ case 'glogin':{const em=val('ge').trim().toLowerCase(),code=val('gc').trim(),er=document.getElementById('gerr');
+  if(!EMAIL_RE.test(em)){er.textContent='Adresse e-mail invalide.';return}if(!code){er.textContent='Entre ton code, ou demande-en un par e-mail.';const c=document.getElementById('gc');c&&c.focus();return}
+  gEmail=em;gInit();er.textContent='Vérification…';
+  syncCall({action:'connexion',email:em,code,app:window.ATODY_VENTE?'vente':'admin'}).then(j=>{syncSet({err:'',act:1,role:j.role,qui:j.prenoms||j.nom||'',email:em,statut:'ok',perso:j.changer?0:1,vreq:''});
+    if(j.changer)showNewCodeGate();else finishLogin(code)}).catch(e=>{const x=document.getElementById('gerr');if(x)x.textContent=gMsg(e)});return}
+ case 'gmail':{const em=val('ge').trim().toLowerCase(),er=document.getElementById('gerr');if(!EMAIL_RE.test(em)){er.textContent='Écris d’abord ton adresse e-mail.';return}
+  gEmail=em;gInit();er.textContent='Envoi…';
+  syncCall({action:'identifier',email:em,oublie:1}).then(()=>{showEmailGate('Si cette adresse a un compte, un code vient d’être envoyé. Écris-le dans « Code » (valable 1 heure).');const c=document.getElementById('gerr');if(c)c.style.color='#9BE3C0'}).catch(e=>{const x=document.getElementById('gerr');if(x)x.textContent=gMsg(e)});return}
  case 'gnext':{const em=val('ge').trim().toLowerCase(),er=document.getElementById('gerr');if(!EMAIL_RE.test(em)){er.textContent='Adresse e-mail invalide.';return}
   gEmail=em;gInit();er.textContent='Vérification…';
   syncCall({action:'identifier',email:em}).then(j=>showCodeStep(j.etape==='perso'?'perso':'mail')).catch(e=>{const x=document.getElementById('gerr');if(x)x.textContent=gMsg(e)});return}
@@ -2193,7 +2200,7 @@ const EYE_ON='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke
 function eyeUp(){document.querySelectorAll('input[type=password]:not([data-eye])').forEach(i=>{i.dataset.eye='1';const w=document.createElement('span');w.className='pw';i.parentNode.insertBefore(w,i);w.appendChild(i);const b=document.createElement('button');b.type='button';b.className='eye';b.setAttribute('aria-label','Afficher le code');b.innerHTML=EYE_ON;w.appendChild(b)})}
 try{new MutationObserver(eyeUp).observe(document.body,{childList:true,subtree:true});eyeUp()}catch(e){}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.eye');if(!b)return;e.preventDefault();e.stopPropagation();const i=b.parentNode.querySelector('input');if(!i)return;const show=i.type==='password';i.type=show?'text':'password';b.innerHTML=show?EYE_OFF:EYE_ON;b.setAttribute('aria-label',show?'Cacher le code':'Afficher le code');i.focus()},true);
-const APP_VERSION='2026.11.08-p';
+const APP_VERSION='2026.11.08-q';
 function showUpd(){let seen='';try{seen=localStorage.getItem('atodyv_ver')||''}catch(e){}
  try{localStorage.setItem('atodyv_ver',APP_VERSION)}catch(e){}
  if(!seen||seen===APP_VERSION)return;const sp=document.getElementById('splash');if(!sp)return;
