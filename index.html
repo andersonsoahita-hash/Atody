@@ -808,6 +808,10 @@ body{background:linear-gradient(160deg,var(--bg),color-mix(in srgb,var(--c4) 9%,
 .banner .row{flex-wrap:wrap}.banner.blue button{border-color:var(--navy2)}
 .pw{position:relative;display:block}.pw input{padding-right:48px!important}.pw .eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:38px;height:38px;display:grid;place-items:center;border:0;background:none;color:var(--muted);border-radius:10px;cursor:pointer;padding:0;min-height:0;box-shadow:none}.pw .eye:hover{color:var(--fg)}
 @supports (-webkit-hyphens:none){.pw .eye{right:40px}.pw input{padding-right:84px!important}}
+.banner>.row{flex:1 1 100%!important;min-width:0;flex-wrap:wrap;gap:8px}.banner>.row button{flex:1 1 150px;min-width:0}
+html,body{max-width:100%;overflow-x:hidden}
+.seg{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}.seg::-webkit-scrollbar{display:none}.seg button{flex:none}
+@media(max-width:480px){.seg button{padding:9px 12px;font-size:14px}}
 </style>
 
 <div class="splash" id="splash"><div class="sp-in"><div class="sp-streaks" aria-hidden="true"></div>
@@ -2199,7 +2203,7 @@ const EYE_ON='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke
 function eyeUp(){document.querySelectorAll('input[type=password]:not([data-eye])').forEach(i=>{i.dataset.eye='1';const w=document.createElement('span');w.className='pw';i.parentNode.insertBefore(w,i);w.appendChild(i);const b=document.createElement('button');b.type='button';b.className='eye';b.setAttribute('aria-label','Afficher le code');b.innerHTML=EYE_ON;w.appendChild(b)})}
 try{new MutationObserver(eyeUp).observe(document.body,{childList:true,subtree:true});eyeUp()}catch(e){}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.eye');if(!b)return;e.preventDefault();e.stopPropagation();const i=b.parentNode.querySelector('input');if(!i)return;const show=i.type==='password';i.type=show?'text':'password';b.innerHTML=show?EYE_OFF:EYE_ON;b.setAttribute('aria-label',show?'Cacher le code':'Afficher le code');i.focus()},true);
-const APP_VERSION='2026.11.08-q';
+const APP_VERSION='2026.11.08-r';
 function showUpd(){let seen='';try{seen=localStorage.getItem('atody_ver')||''}catch(e){}
  try{localStorage.setItem('atody_ver',APP_VERSION)}catch(e){}
  if(!seen||seen===APP_VERSION)return;const sp=document.getElementById('splash');if(!sp)return;
