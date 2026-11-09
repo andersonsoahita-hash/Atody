@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="fr"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#2A241A">
 <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ATODY Ventes">
@@ -810,7 +810,7 @@ body{background:linear-gradient(160deg,var(--bg),color-mix(in srgb,var(--c4) 9%,
 .pw{position:relative;display:block}.pw input{padding-right:48px!important}.pw .eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:38px;height:38px;display:grid;place-items:center;border:0;background:none;color:var(--muted);border-radius:10px;cursor:pointer;padding:0;min-height:0;box-shadow:none}.pw .eye:hover{color:var(--fg)}
 @supports (-webkit-hyphens:none){.pw .eye{right:40px}.pw input{padding-right:84px!important}}
 .banner>.row{flex:1 1 100%!important;min-width:0;flex-wrap:wrap;gap:8px}.banner>.row button{flex:1 1 150px;min-width:0}
-html,body{max-width:100%;overflow-x:clip}
+html,body{max-width:100%;overflow-x:clip;touch-action:manipulation;-webkit-text-size-adjust:100%}
 .seg{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}.seg::-webkit-scrollbar{display:none}.seg button{flex:none}
 @media(max-width:480px){.seg button{padding:9px 12px;font-size:14px}}
 </style>
@@ -1900,6 +1900,7 @@ async function syncBackup(force){if(training||syncBusy)return false;const c=sync
  finally{syncBusy=false;const ae=document.activeElement;if(view==='set'&&!document.querySelector('.modal')&&!(ae&&/INPUT|SELECT|TEXTAREA/.test(ae.tagName)))render()}}
 setInterval(()=>{if(navigator.onLine!==false)syncBackup(false)},180000);
 window.addEventListener('online',()=>syncBackup(false));
+['gesturestart','gesturechange','gestureend'].forEach(g=>document.addEventListener(g,e=>e.preventDefault(),{passive:false}));document.addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault()},{passive:false});document.addEventListener('dblclick',e=>e.preventDefault());
 /* ===== Synchronisation automatique entre appareils (by Stephen) =====
    Chaque enregistrement (client, facture, paiement, dépense…) a un identifiant. Un appareil envoie ce qu'il a changé et reçoit ce que les autres
    ont changé, en arrière-plan : tout de suite après une saisie, puis toutes les 4 secondes. Hors ligne, rien n'est perdu : ça part au retour du réseau.
@@ -2308,7 +2309,7 @@ const EYE_ON='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke
 function eyeUp(){document.querySelectorAll('input[type=password]:not([data-eye])').forEach(i=>{i.dataset.eye='1';const w=document.createElement('span');w.className='pw';i.parentNode.insertBefore(w,i);w.appendChild(i);const b=document.createElement('button');b.type='button';b.className='eye';b.setAttribute('aria-label','Afficher le code');b.innerHTML=EYE_ON;w.appendChild(b)})}
 try{new MutationObserver(eyeUp).observe(document.body,{childList:true,subtree:true});eyeUp()}catch(e){}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.eye');if(!b)return;e.preventDefault();e.stopPropagation();const i=b.parentNode.querySelector('input');if(!i)return;const show=i.type==='password';i.type=show?'text':'password';b.innerHTML=show?EYE_OFF:EYE_ON;b.setAttribute('aria-label',show?'Cacher le code':'Afficher le code');i.focus()},true);
-const APP_VERSION='2026.11.09-e';
+const APP_VERSION='2026.11.09-f';
 function showUpd(){let seen='';try{seen=localStorage.getItem('atodyv_ver')||''}catch(e){}
  try{localStorage.setItem('atodyv_ver',APP_VERSION)}catch(e){}
  if(!seen||seen===APP_VERSION)return;const sp=document.getElementById('splash');if(!sp)return;
