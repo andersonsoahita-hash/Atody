@@ -58,7 +58,7 @@ svg{display:block}
 .chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;font-weight:700;font-size:14px;display:inline-flex;gap:8px;align-items:center;min-height:42px;box-shadow:var(--shadow)}
 .chip svg{width:19px;height:19px}
 .chip.ic{width:42px;padding:0;justify-content:center}
-.chip .d{width:10px;height:10px;border-radius:50%;background:var(--green)}
+.chip .d{width:10px;height:10px;border-radius:50%;background:var(--green)}.chip .d.w{background:#E9A23B}
 .chip.off .d{background:var(--amber)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface);box-shadow:var(--shadow);max-width:100%}
 .seg button{border:0;background:none;padding:9px 15px;font-weight:700;min-height:42px;white-space:nowrap}
@@ -909,13 +909,13 @@ function mkDemo(){
  S.users=[];S.fixed=[];S.cash0=0;S.start='2026-10-01';S.setup=true;S.lastBackup='';
  return S;
 }
-function mkEmpty(){return {prices:{S:450,M:500,L:550,XL:600,XXL:650,'3XL':700,'4XL':750,Extra:800},cats:['Provende','Eau','Vitamines','Médicaments','Porteurs','Employés','Carburant','Autres'],people:[],devices:[],clients:[],inv:[],pon:[],ram:[],cas:[],hens:[],exp:[],own:[],counter:0,users:[],fixed:[],cash0:0,start:'',setup:false,lastBackup:'',budget:{},budget1:null,log:[],checks:[]}}
+function mkEmpty(){return {prices:{S:450,M:500,L:550,XL:600,XXL:650,'3XL':700,'4XL':750,Extra:800},cats:['Provende','Eau','Vitamines','Médicaments','Porteurs','Employés','Carburant','Autres'],people:[],devices:[],clients:[],inv:[],pon:[],ram:[],cas:[],hens:[],exp:[],own:[],counter:0,users:[],fixed:[],cash0:0,start:'',setup:false,lastBackup:'',budget:{},budget1:null,log:[],checks:[],cfgm:{}}}
 function mig(S){const E=mkEmpty();Object.keys(E).forEach(k=>{if(S[k]==null)S[k]=E[k]});return S}
 const KEY='atody_v1';
 function loadReal(){try{const j=JSON.parse(localStorage.getItem(KEY));if(j&&j.REAL&&Array.isArray(j.REAL.inv))return mig(j.REAL)}catch(e){}return null}
-function persist(){if(training)return;try{localStorage.setItem(KEY,JSON.stringify({v:1,at:Date.now(),REAL}))}catch(e){}}
+function persist(){if(training)return;try{localStorage.setItem(KEY,JSON.stringify({v:1,at:Date.now(),REAL}))}catch(e){}if(typeof syncKick==='function')syncKick(450)}
 let REAL=loadReal()||mkEmpty(),TRAIN=null,training=false,online=true,role='admin',theme='auto';
-let view='home',sub=null,q='',qc='',bilTab='pil',stockTab='in',calMonth=TODAY.slice(0,7),calSel=TODAY,draft={cl:'',q:{}},queue=[],pend=null;
+let clEditId='',view='home',sub=null,q='',qc='',bilTab='pil',stockTab='in',calMonth=TODAY.slice(0,7),calSel=TODAY,draft={cl:'',q:{}},queue=[],pend=null;
 const cur=()=>training?TRAIN:REAL;
 const cname=id=>(cur().clients.find(c=>c.id===id)||{n:'?'}).n;
 /* calculs : tout ce qui est annulé est ignoré */
@@ -943,7 +943,7 @@ const hasPon=d=>cur().pon.some(p=>!p.x&&p.d===d);
 const byDate=(a,b)=>b.d.localeCompare(a.d)||(b.no||9999)-(a.no||9999);
 
 function toast(m){const d=document.createElement('div');d.className='toast';d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),2400)}
-function setOnline(v){online=v;if(v){const n=queue.length;cur().inv.filter(i=>!i.no).sort((a,b)=>a.tmp-b.tmp).forEach(i=>{i.no=++cur().counter});queue=[];if(n)toast(n+' facture'+(n>1?'s':'')+' envoyée'+(n>1?'s':'')+' et numérotée'+(n>1?'s':''))}render()}
+function setOnline(v){online=v;if(v&&!syncOn()){const n=queue.length;cur().inv.filter(i=>!i.no).sort((a,b)=>a.tmp-b.tmp).forEach(i=>{i.no=++cur().counter});queue=[];if(n)toast(n+' facture'+(n>1?'s':'')+' envoyée'+(n>1?'s':'')+' et numérotée'+(n>1?'s':''))}render()}
 
 /* ---------- graphiques (SVG à l’échelle) ---------- */
 function lineChart(o){
@@ -990,7 +990,7 @@ function shell(body){
  <nav class="nav">${nav.map(([k,i])=>`<button class="${view===k||(k==='cli'&&view==='cli')?'on':''}" data-a="nav" data-k="${k}">${ic(i)}${k==='home'&&role==='cash'?'Caisse':t(k)}</button>`).join('')}${role==='admin'?`<button class="${view==='set'?'on':''}" data-a="goSet">${ic('set')}${t('set')}</button>`:''}</nav><div class="foot">Akoho · Savon · Baume<br>bientôt<br><br>by Stephen</div></aside>
  <main class="main"><div class="wrap">
  <div class="top"><div class="tl">${stack.length?`<button class="backbtn" data-a="back">${ic('chev')}${t('back')}</button>`:''}<h1>${titles[view]||'ATODY'}</h1></div><div class="chips">
- <span class="chip" title="Les données sont enregistrées sur cet appareil"><i class="d"></i>Sauvegardé</span>
+ <span class="chip" id="s2chip" title="Tes données se synchronisent toutes seules entre tes appareils">${s2chipHtml()}</span>
  <span class="seg"><button class="${lang==='fr'?'on':''}" data-a="lang" data-k="fr">FR</button><button class="${lang==='mg'?'on':''}" data-a="lang" data-k="mg">MG</button></span>
  <button class="chip ic" data-a="theme" aria-label="Thème clair ou sombre">${ic(effDark()?'sun':'moon')}</button>
  ${role==='admin'?`<button class="chip ic" data-a="goSet" aria-label="${t('set')}">${ic('set')}</button>`:''}<button class="chip ic" data-a="logout" aria-label="Changer d’utilisateur" title="${me?esc(me.name):''}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button></div></div>
@@ -1054,7 +1054,7 @@ function homeLists(){const c=cur(),ql=q.trim().toLowerCase();
 function vHome(){
  const c=cur(),{open,done}=homeLists(),n=hfActive();
  const panel=`<div class="card hfp"><div class="hfg"><div class="field"><label for="hfd1">Du</label><input type="date" id="hfd1" value="${hf.from}" max="${TODAY}"></div><div class="field"><label for="hfd2">Au</label><input type="date" id="hfd2" value="${hf.to}" max="${TODAY}"></div>
- <div class="field"><label for="hfcl">Personne</label><select id="hfcl"><option value="">Toutes</option>${[...c.clients].sort((a,b)=>a.n.localeCompare(b.n)).map(x=>`<option value="${x.id}" ${hf.cl===x.id?'selected':''}>${esc(x.n)}</option>`).join('')}</select></div>
+ <div class="field"><label for="hfcl">Personne</label><select id="hfcl"><option value="">Toutes</option>${[...c.clients.filter(x=>!x.del)].sort((a,b)=>a.n.localeCompare(b.n)).map(x=>`<option value="${x.id}" ${hf.cl===x.id?'selected':''}>${esc(x.n)}</option>`).join('')}</select></div>
  <div class="field"><label for="hfmin">Montant minimum (Ar)</label><input id="hfmin" inputmode="numeric" value="${esc(hf.min)}" placeholder="ex. 100000"></div><div class="field"><label for="hfmax">Montant maximum (Ar)</label><input id="hfmax" inputmode="numeric" value="${esc(hf.max)}" placeholder="ex. 500000"></div></div>
  <div class="l1" style="gap:10px;margin-top:4px"><span class="seg">${[['all','Toutes'],['open','À encaisser'],['done','Soldées']].map(([v,l])=>`<button class="${hf.st===v?'on':''}" data-a="hfst" data-v="${v}">${l}</button>`).join('')}</span><button class="btn l s ${hf.late?'tg':''}" data-a="hflate">${hf.late?'✓ ':''}À relancer seulement</button><button class="link" data-a="hfreset">Tout effacer</button></div></div>`;
  return heroEgg()+homeBanners()+`<div class="bigrow"><button class="big" data-a="new">${ic('plus')}${t('newsale')}</button><button class="big gr" data-a="payopen">${ic('cash')}Enregistrer un paiement</button></div>${hasOld()&&role!=='cash'?`<button class="big gr2" data-a="payold" style="width:100%;margin-top:10px">${ic('cash')}Ancienne dette encaissée</button>`:''}
@@ -1065,7 +1065,7 @@ function vHome(){
 
 function vNew(){
  const c=cur(),n=sumQ(draft.q),sum=Object.entries(draft.q).reduce((s,[k,v])=>s+v*c.prices[k],0);
- return `<div class="cpick"><div class="cph"><b>1. Qui achète ?</b><span>${draft.cl?'✓ '+esc(cname(draft.cl)):'Touche un nom'}</span></div><div class="cpg">${[...c.clients].sort((a,b)=>liveInv().filter(i=>i.cl===b.id).length-liveInv().filter(i=>i.cl===a.id).length||a.n.localeCompare(b.n)).map(x=>`<button class="cb ${draft.cl===x.id?'on':''}" data-a="pickcl" data-id="${x.id}" aria-pressed="${draft.cl===x.id}"><span class="av2">${esc(x.n[0])}</span><span>${esc(x.n)}</span></button>`).join('')}<button class="cb add" data-a="newCl"><span class="av2">+</span><span>Nouveau revendeur</span></button></div></div>
+ return `<div class="cpick"><div class="cph"><b>1. Qui achète ?</b><span>${draft.cl?'✓ '+esc(cname(draft.cl)):'Touche un nom'}</span></div><div class="cpg">${[...c.clients.filter(x=>!x.del)].sort((a,b)=>liveInv().filter(i=>i.cl===b.id).length-liveInv().filter(i=>i.cl===a.id).length||a.n.localeCompare(b.n)).map(x=>`<button class="cb ${draft.cl===x.id?'on':''}" data-a="pickcl" data-id="${x.id}" aria-pressed="${draft.cl===x.id}"><span class="av2">${esc(x.n[0])}</span><span>${esc(x.n)}</span></button>`).join('')}<button class="cb add" data-a="newCl"><span class="av2">+</span><span>Nouveau revendeur</span></button></div></div>
  <div class="cph" style="margin:14px 2px 8px"><b>2. Combien d’œufs ?</b></div>
  <div class="sizes">${SIZES.map(s=>`<div class="sz">${szb(s)}<span class="p">${ar(c.prices[s])}</span><span class="step"><button data-a="dec" data-s="${s}" aria-label="−10">−</button><input inputmode="numeric" data-s="${s}" value="${draft.q[s]||''}" placeholder="0" aria-label="${s}"><button data-a="inc" data-s="${s}" aria-label="+10">+</button></span></div>`).join('')}</div>
  <div class="totalbar"><span>${n} ${t('eggs')}<br><b>${ar(sum)}</b></span><button class="btn g" data-a="preview" ${n&&draft.cl?'':'disabled'}>${t('see')}</button></div>`}
@@ -1115,8 +1115,8 @@ function vCli(){
   return `<div class="card"><div class="row" style="flex-wrap:nowrap;align-items:center"><span class="av" style="flex:none">${esc(cl.n[0])}</span><div style="flex:1;min-width:0"><b style="font-family:var(--fd);font-size:22px;overflow-wrap:anywhere">${esc(cl.n)}</b><br><span class="note">${esc(cl.tel)}</span></div></div>
   ${role==='cash'?`<div class="tile" style="margin-top:14px;box-shadow:none"><small>Doit encore</small><b class="${d>0?'neg':'pos'}" style="font-size:30px">${ar(d)}</b></div>`:
   `<div class="tiles" style="margin-top:14px"><div class="tile" style="box-shadow:none"><small>${t('total')}</small><b>${ar(live.reduce((s,i)=>s+tot(i),0))}</b></div><div class="tile" style="box-shadow:none"><small>${t('paid')}</small><b class="pos">${ar(live.reduce((s,i)=>s+paid(i),0))}</b></div><div class="tile" style="box-shadow:none"><small>${t('rest')}</small><b class="${d>0?'neg':'pos'}">${ar(d)}</b></div></div>`}
-  ${d>0?`<button class="btn g w" style="width:100%;margin-top:12px" data-a="account" data-id="${sub}">${t('acc')}</button>`:''}</div>${role==='cash'?'':`<h2>Ce qu’il achète <b>par taille</b></h2>${sizeCard(sub)}`}<h2>Factures</h2><div class="list">${inv.map(invRow).join('')}</div>`}
- const ql=qc.trim().toLowerCase(),list=[...c.clients].filter(x=>!ql||x.n.toLowerCase().includes(ql)).sort((a,b)=>clientDebt(b.id)-clientDebt(a.id)||a.n.localeCompare(b.n));
+  ${d>0?`<button class="btn g w" style="width:100%;margin-top:12px" data-a="account" data-id="${sub}">${t('acc')}</button>`:''}<div class="row" style="gap:8px;margin-top:12px"><button class="btn l s" data-a="clEdit" data-id="${sub}">Modifier</button>${role==='admin'?`<button class="btn l s" data-a="clDel" data-id="${sub}">Effacer ce client</button>`:''}</div></div>${role==='cash'?'':`<h2>Ce qu’il achète <b>par taille</b></h2>${sizeCard(sub)}`}<h2>Factures</h2><div class="list">${inv.map(invRow).join('')}</div>`}
+ const ql=qc.trim().toLowerCase(),list=[...c.clients.filter(x=>!x.del)].filter(x=>!ql||x.n.toLowerCase().includes(ql)).sort((a,b)=>clientDebt(b.id)-clientDebt(a.id)||a.n.localeCompare(b.n));
  return `<input class="search" id="qc" value="${esc(qc)}" placeholder="Chercher un nom" autocomplete="off" aria-label="Chercher un nom" style="margin-top:0">
  <div class="list" style="margin-top:12px">${list.map(x=>{const d=clientDebt(x.id);return `<button class="inv s-${d>0?'red':'green'}" data-a="cl2" data-id="${x.id}"><span class="dot"></span><span class="mid"><span class="l1"><b>${esc(x.n)}</b></span><small>${esc(x.tel)}</small></span><span class="amt">${d>0?ar(d):'✓'}<small>${d>0?(role==='cash'?'Doit encore':t('rest')):t('closed')}</small></span></button>`}).join('')}</div>
  ${role==='admin'?`<button class="btn l" style="width:100%;margin-top:12px" data-a="newCl">+ Nouveau revendeur</button>`:''}`}
@@ -1145,7 +1145,7 @@ function fxDates(f){const S=cur(),out=[],from=S.start&&S.start>f.from?S.start:f.
  else{let [Y,M]=from.split('-').map(Number);for(let k=0;k<700;k++){const dim=new Date(Y,M,0).getDate(),d=Y+'-'+String(M).padStart(2,'0')+'-'+String(Math.min(f.day||1,dim)).padStart(2,'0');if(d>to)break;if(d>=from)out.push(d);M++;if(M>12){M=1;Y++}}}
  return out}
 function applyFixed(){const S=cur();if(!S||!S.fixed||!S.fixed.length||!S.setup)return;let ch=false;
- S.fixed.filter(f=>f.on!==false).forEach(f=>fxDates(f).forEach(d=>{if(!S.exp.some(e=>e.fx===f.id&&e.d===d)){S.exp.push({id:uid(),d,c:f.cat,a:fxAmt(f,d),note:(f.kind==='salary'?'Salaire de ':'')+f.n+' (automatique)',fx:f.id,auto:true});ch=true}}));
+ S.fixed.filter(f=>f.on!==false).forEach(f=>fxDates(f).forEach(d=>{if(!S.exp.some(e=>e.fx===f.id&&e.d===d)){S.exp.push({id:'fx'+f.id+'_'+d,d,c:f.cat,a:fxAmt(f,d),note:(f.kind==='salary'?'Salaire de ':'')+f.n+' (automatique)',fx:f.id,auto:true});ch=true}}));
  if(ch)persist()}
 function fixedCard(){const c=cur(),F=(c.fixed||[]).filter(f=>f.on!==false),mo=f=>f.every==='week'?fxAmt(f,TODAY)*52/12:fxAmt(f,TODAY);
  const row=f=>`<div class="fxr"><span><b>${esc(f.n)}</b><small>${f.kind==='salary'?'Salaire':esc(f.cat)} · ${f.every==='week'?'chaque '+DAYS[f.day]:'le '+f.day+' de chaque mois'}</small></span><b>${ar(fxAmt(f,TODAY))}</b><button class="btn l s" data-a="fxedit" data-id="${f.id}">Modifier</button></div>`;
@@ -1286,7 +1286,7 @@ function askQs(){const c=cur(),adm=role==='admin',Q=[],add=(q,f,a)=>{if(!a||adm)
   add('Peut-on lui faire crédit ?',()=>{const d=clientDebt(sub),old=inv.filter(x=>rest(x)>0).map(x=>dayDiff(x.d)).sort((a,b)=>b-a)[0]||0;return (d?`Il doit déjà ${ar(d)}, la plus ancienne facture a ${old} jour${old>1?'s':''}. `:'Il ne doit rien. ')+(d===0?'Oui, sans souci (indicatif).':old>=10?'Mieux vaut attendre qu’il règle l’ancienne facture avant d’en ouvrir une autre (indicatif).':'Possible avec une limite raisonnable (indicatif).')});
   add('Combien de jours met-il à payer ?',()=>{const cl2=inv.filter(i=>rest(i)<=0&&vp(i).length);if(!cl2.length)return 'Pas encore de facture soldée.';const d=cl2.reduce((a,i)=>a+dm(vp(i).map(p=>p.d).sort().pop(),i.d),0)/cl2.length;return `En moyenne <b>${Math.round(d)} jour${d>=2?'s':''}</b> après l’achat, sur ${cl2.length} facture(s) soldée(s).`})}}
  else if(view==='cli'){
-  add('Combien a-t-on de clients ?',()=>{const act=c.clients.filter(x=>{const d=lastBuy(x.id);return d&&dayDiff(d)<=14}).length;return `<b>${c.clients.length} clients</b> au total, dont ${act} ont acheté ces 14 derniers jours.`});
+  add('Combien a-t-on de clients ?',()=>{const act=c.clients.filter(x=>{const d=lastBuy(x.id);return d&&dayDiff(d)<=14}).length;return `<b>${c.clients.filter(x=>!x.del).length} clients</b> au total, dont ${act} ont acheté ces 14 derniers jours.`});
   add('Combien de clients doivent de l’argent ?',()=>{const d=debtors();return d.length?`<b>${d.length} client${d.length>1?'s':''}</b> pour ${ar(d.reduce((a,x)=>a+x.d,0))} :`+ul(d.slice(0,5).map(x=>`${esc(x.n)} : ${ar(x.d)}`)):'Personne ne doit rien.'});
   add('Qui n’a pas acheté depuis 10 jours ?',()=>{const l=c.clients.map(x=>({n:x.n,d:lastBuy(x.id)})).filter(x=>x.d&&dayDiff(x.d)>=10).sort((a,b)=>a.d.localeCompare(b.d));return l.length?ul(l.slice(0,6).map(x=>`${esc(x.n)} : dernier achat il y a ${dayDiff(x.d)} j`)):'Tous ont acheté récemment.'});
   add('Qui achète le plus ?',()=>{const l=c.clients.map(x=>({n:x.n,v:liveInv().filter(i=>i.cl===x.id).reduce((a,i)=>a+tot(i),0)})).sort((a,b)=>b.v-a.v).slice(0,3);return ul(l.map(x=>`${esc(x.n)} : ${ar(x.v)}`))},1)}
@@ -1685,7 +1685,7 @@ function makeLocalUser(name,role,email,code){let u=REAL.users.find(x=>x.email&&x
  if(!u){u={id:uid(),name:name||email.split('@')[0],on:true};REAL.users.push(u)}
  const salt=uid();u.email=email;u.role=role==='admin'?'admin':'cash';u.salt=salt;u.h=hp(code,salt);u.on=true;if(!REAL.people.includes(u.name))REAL.people.push(u.name);persist();return u}
 async function finishLogin(code){const g=syncCfg();
- if(g.role==='admin'&&!REAL.setup&&!window.ATODY_VENTE){try{const r=await syncCall({action:'restore'});if(r&&r.json){const d=JSON.parse(r.json);if(d&&Array.isArray(d.inv)&&Array.isArray(d.clients)){REAL=mig(d);lastSent=r.json}}}catch(e){}}
+ try{await syncTick(true)}catch(e){}
  const u=makeLocalUser(g.qui||g.email.split('@')[0],g.role,g.email,code);signIn(u,true);
  if(!REAL.setup&&g.role==='admin'&&!window.ATODY_VENTE){view='setup';render()}
  if(g.role==='admin')syncBackup(true)}
@@ -1893,10 +1893,84 @@ async function syncBackup(force){if(training||syncBusy)return false;const c=sync
  finally{syncBusy=false;const ae=document.activeElement;if(view==='set'&&!document.querySelector('.modal')&&!(ae&&/INPUT|SELECT|TEXTAREA/.test(ae.tagName)))render()}}
 setInterval(()=>{if(navigator.onLine!==false)syncBackup(false)},180000);
 window.addEventListener('online',()=>syncBackup(false));
+/* ===== Synchronisation automatique entre appareils (by Stephen) =====
+   Chaque enregistrement (client, facture, paiement, dépense…) a un identifiant. Un appareil envoie ce qu'il a changé et reçoit ce que les autres
+   ont changé, en arrière-plan : tout de suite après une saisie, puis toutes les 4 secondes. Hors ligne, rien n'est perdu : ça part au retour du réseau.
+   Les paiements d'une même facture saisis sur deux appareils s'additionnent ; une annulation l'emporte toujours ; le serveur donne les numéros de facture. */
+var S2K=(window.ATODY_VENTE?'atodyv_':'atody_')+'s2',s2busy=false,s2last=0,s2timer=null,s2err=0,s2pend=0;
+var S2=(function(){try{var j=JSON.parse(localStorage.getItem(S2K));if(j&&j.known)return j}catch(e){}return {seq:0,epoch:'',known:{},skew:0}})();
+function s2save(){try{localStorage.setItem(S2K,JSON.stringify(S2))}catch(e){}}
+var SYNC_COLS=['clients','inv','pon','ram','cas','hens','exp','own','fixed','checks','log'],SYNC_CFG=['prices','cats','people','cash0','start','setup','budget','budget1'];
+function s2cols(){return syncCfg().role==='admin'?SYNC_COLS:['clients','inv']}
+function s2cfg(){return syncCfg().role==='admin'?SYNC_CFG:[]}
+function syncOn(){var c=syncCfg();return !training&&!!c.url&&!!c.act&&!!c.dev}
+function isIdArr(a){return Array.isArray(a)&&a.length>0&&a.every(function(x){return x&&typeof x==='object'&&x.id!=null})}
+function canon(v){if(v===undefined)return 'u';if(v===null||typeof v!=='object')return JSON.stringify(v);
+ if(Array.isArray(v)){var a=v.map(canon);if(isIdArr(v))a=v.slice().sort(function(x,y){return String(x.id)<String(y.id)?-1:1}).map(canon);return '['+a.join(',')+']'}
+ return '{'+Object.keys(v).filter(function(k){return k!=='m'}).sort().map(function(k){return JSON.stringify(k)+':'+canon(v[k])}).join(',')+'}'}
+function h53(s){var a=0xdeadbeef,b=0x41c6ce57;for(var i=0;i<s.length;i++){var c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}
+ a=Math.imul(a^(a>>>16),2246822507)^Math.imul(b^(b>>>13),3266489909);b=Math.imul(b^(b>>>16),2246822507)^Math.imul(a^(a>>>13),3266489909);return (4294967296*(2097151&b)+(a>>>0)).toString(36)+s.length}
+function hrec(r){return h53(canon(r))}
+function mergeRec(a,b){
+ var am=a.m||0,bm=b.m||0,win=am>=bm?a:b,lose=win===a?b:a,res=Object.assign({},lose,win);
+ Object.keys(Object.assign({},a,b)).forEach(function(k){
+  if(k==='m')return;var x=a[k],y=b[k];if(x===undefined||y===undefined)return;
+  if(isIdArr(x)&&isIdArr(y)){var out=x.slice();y.forEach(function(e){var i=out.findIndex(function(z){return z.id===e.id});
+    if(i<0)out.push(e);else{var m1=Object.assign({},out[i],{m:am}),m2=Object.assign({},e,{m:bm}),mm=mergeRec(m1,m2);delete mm.m;out[i]=mm}});res[k]=out}
+  else if(k==='x'||k==='del'){res[k]=(x&&y)?win[k]:(x||y)}
+  else if(k==='no'){res.no=x==null?y:(y==null?x:win.no)}});
+ return res}
+function s2collect(){var out=[],now=Date.now()+(S2.skew||0),cm=REAL.cfgm=REAL.cfgm||{};
+ s2cols().forEach(function(t){(REAL[t]||[]).forEach(function(r){if(!r||r.id==null)return;var key=t+':'+r.id,h=hrec(r);
+  if(S2.known[key]!==h){r.m=Math.max(now,(r.m||0)+1);out.push({t:t,id:r.id,m:r.m,j:JSON.stringify(r),key:key,h:h})}})});
+ var DEF=mkEmpty();
+ s2cfg().forEach(function(k){var key='cfg:'+k,h=hrec({id:k,v:REAL[k]});
+  if(S2.known[key]!==h&&(cm[k]||h!==hrec({id:k,v:DEF[k]}))){var m=Math.max(now,(cm[k]||0)+1);cm[k]=m;out.push({t:'cfg',id:k,m:m,j:JSON.stringify({id:k,v:REAL[k],m:m}),key:key,h:h})}});
+ s2pend=out.length;return out}
+function s2apply(rows){var changed=false,mine=(syncCfg().dev||'').slice(0,8),cols=s2cols(),cfgs=s2cfg();
+ rows.forEach(function(r){if(r.a===mine)return;var rec;try{rec=JSON.parse(r.j)}catch(e){return}var key=r.t+':'+r.id;
+  if(r.t==='cfg'){var k=r.id;if(cfgs.indexOf(k)<0)return;var cm=REAL.cfgm=REAL.cfgm||{},lm=cm[k]||0,v=REAL[k],nv=v,nm=lm;
+   if(k==='cats'||k==='people'){nv=Array.from(new Set((v||[]).concat(rec.v||[])));nm=Math.max(lm,rec.m||0)}else if((rec.m||0)>lm){nv=rec.v;nm=rec.m}
+   if(canon(nv)!==canon(v)){REAL[k]=nv;changed=true}cm[k]=nm;S2.known[key]=hrec({id:k,v:rec.v});return}
+  if(cols.indexOf(r.t)<0)return;var arr=REAL[r.t];if(!Array.isArray(arr))return;var i=arr.findIndex(function(z){return z.id===rec.id});
+  if(i<0){arr.push(rec);changed=true}else{var loc=arr[i],mg=mergeRec(loc,rec);if(canon(mg)!==canon(loc)){arr[i]=mg;changed=true}else if((mg.m||0)>(loc.m||0))arr[i]=mg}
+  S2.known[key]=hrec(rec)});
+ return changed}
+function s2wipe(){var u=REAL.users,nv=mkEmpty();nv.users=u;REAL=nv;keepMe();S2.seq=0;S2.known={}}
+async function syncTick(force){
+ if(training||s2busy)return;var c=syncCfg();if(!c.url||!c.act||!c.dev||(!me&&!force))return;if(navigator.onLine===false)return;
+ if(s2err>4&&Date.now()-s2last<20000&&!force)return;
+ var ch0=s2collect();if(!ch0.length&&!force&&Date.now()-s2last<3500)return;
+ s2busy=true;var any=false;s2last=Date.now();
+ try{for(var guard=0;guard<8;guard++){
+   var ch=guard?s2collect():ch0;
+   var r=await syncCall({action:'sync',seq:S2.seq,epoch:S2.epoch,push:ch.map(function(x){return {t:x.t,id:x.id,m:x.m,j:x.j}})});
+   if(r.now)S2.skew=r.now-Date.now();
+   if(r.reset){s2wipe();S2.epoch=r.epoch;any=true;continue}
+   if(!S2.epoch)S2.epoch=r.epoch;
+   ch.forEach(function(x){var h=x.h,no=(r.nos||{})[x.id];
+    if(x.t==='inv'&&no!=null){var o=JSON.parse(x.j);o.no=no;h=hrec(o);var rec=REAL.inv.find(function(z){return z.id===x.id});if(rec&&rec.no==null){rec.no=no;any=true}}
+    S2.known[x.key]=h});
+   if(s2apply(r.rows||[]))any=true;
+   S2.seq=r.seq;s2save();
+   if(!r.more)break}
+  persistQuiet();syncSet({ok:Date.now(),err:''});s2err=0;s2last=Date.now()}
+ catch(e){s2err++;syncSet({err:String(e&&e.message||e)})}
+ finally{s2busy=false;s2chip();if(any)renderSoon()}}
+function persistQuiet(){if(training)return;try{localStorage.setItem(KEY,JSON.stringify({v:1,at:Date.now(),REAL}))}catch(e){}}
+function syncKick(ms){if(training)return;clearTimeout(s2timer);s2timer=setTimeout(function(){syncTick()},ms||0)}
+function renderSoon(){var ae=document.activeElement;if(ae&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName)&&!ae.closest('#layer')){setTimeout(renderSoon,1500);return}if(document.getElementById('auth'))return;render()}
+function s2chipHtml(){if(!syncOn())return '<i class="d"></i>Sur cet appareil';var off=navigator.onLine===false,c=syncCfg();
+ if(off)return '<i class="d w"></i>Hors ligne'+(s2pend?' · '+s2pend+' en attente':'');if(c.err||s2pend)return '<i class="d w"></i>'+(s2pend?'Envoi en cours…':'Connexion…');return '<i class="d"></i>Synchronisé'}
+function s2chip(){var e=document.getElementById('s2chip');if(e)e.innerHTML=s2chipHtml()}
+setInterval(function(){if(!document.hidden)syncTick()},4000);setInterval(function(){if(document.hidden)syncTick()},30000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)syncTick()});
+window.addEventListener('online',function(){syncTick(true)});window.addEventListener('offline',s2chip);window.addEventListener('focus',function(){syncTick()});
+
 function syncCard(){if(training||role!=='admin')return '';const c=syncCfg(),ok=c.ok?new Date(c.ok):null;
- const st=c.err?`<span class="neg">Dernier essai raté : ${esc(c.err)}</span>`:(ok?`Dernière copie : <b>${ok.toLocaleDateString('fr-FR')} ${ok.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</b>`:'Aucune copie envoyée pour l’instant.');
- return `<div class="card"><h3>Mon compte</h3><p class="note" style="margin:4px 0 10px"><b>${esc(c.qui||'')}</b> · ${esc(c.email||'')}<br>Une copie complète des données part toute seule vers le Google Sheet, toutes les 3 minutes quand il y a du nouveau et qu’il y a internet. ${st}</p>
- <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn l s" data-a="mycode">Changer mon code</button><button class="btn l s" data-a="sybackup">Envoyer une copie maintenant</button><button class="btn l s" data-a="syrestore">Restaurer depuis le Sheet</button><button class="btn l s" data-a="syout">Se déconnecter</button></div><div class="err" id="syer"></div></div>`}
+ const st=c.err?`<span class="neg">Dernier essai raté : ${esc(c.err)}</span>`:(ok?`Dernière synchronisation : <b>${ok.toLocaleDateString('fr-FR')} ${ok.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</b>`:'Pas encore synchronisé.');
+ return `<div class="card"><h3>Mon compte</h3><p class="note" style="margin:4px 0 10px"><b>${esc(c.qui||'')}</b> · ${esc(c.email||'')}<br>Tes données se synchronisent toutes seules entre tes appareils, en quelques secondes, dès qu’il y a internet. Hors ligne, tout est gardé puis envoyé au retour du réseau. ${st}</p>
+ <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn l s" data-a="mycode">Changer mon code</button><button class="btn l s" data-a="synow">Synchroniser maintenant</button><button class="btn l s" data-a="sybackup">Copie de secours</button><button class="btn l s" data-a="syrestore">Restaurer la copie de secours</button><button class="btn l s" data-a="syout">Se déconnecter</button></div><div class="err" id="syer"></div></div>`}
 function cancelModal(title){modal(`<h3>${title}</h3><p class="note">Rien n’est effacé : l’élément reste visible, barré, et ne compte plus dans les chiffres.</p><div class="field"><label for="why">Pourquoi ? (facultatif)</label><input id="why" placeholder="ex. erreur de saisie"></div><div class="row"><button class="btn l" data-a="mclose">Garder</button><button class="btn r" data-a="doCancel">Oui, annuler</button></div>`)}
 
 /* ---------- actions ---------- */
@@ -1987,8 +2061,8 @@ document.addEventListener('click',e=>{
  case 'preview':go('preview');return;
  case 'edit':back();return;
  case 'validate':{const i={id:uid(),no:null,tmp:Date.now(),cl:draft.cl,d:TODAY,q:Object.fromEntries(Object.entries(draft.q).filter(([,v])=>v>0)),pu:{...c.prices},pays:[]};
-  c.inv.push(i);if(online)i.no=++c.counter;else queue.push(i.id);
-  toast(online?'Facture '+label(i)+' enregistrée':'Enregistrée sur l’appareil, numéro en attente');draft={cl:'',q:{}};root('home');return}
+  c.inv.push(i);if(syncOn()){i.no=null;syncKick(80)}else if(online)i.no=++c.counter;else queue.push(i.id);
+  toast(syncOn()?'Facture enregistrée · numéro en cours':online?'Facture '+label(i)+' enregistrée':'Enregistrée sur l’appareil, numéro en attente');draft={cl:'',q:{}};root('home');return}
  case 'open':invCtx=ctxIds();go('inv',b.dataset.id);return;
  case 'invnav':if(!b.dataset.id)return;sub=b.dataset.id;fresh=false;render();window.scrollTo(0,0);return;
  case 'encaisser':encModal(b.dataset.id,false);return;
@@ -2025,6 +2099,7 @@ document.addEventListener('click',e=>{
  case 'domycode':{const o=val('oc'),n=val('nc'),n2=val('nc2'),er=document.getElementById('ser');if(!/^\S.{4,62}\S$/.test(n)){er.textContent='6 caractères minimum (lettres, chiffres, symboles), sans espace au début ni à la fin.';return}if(n!==n2){er.textContent='Les deux codes ne sont pas identiques.';return}
   er.textContent='Enregistrement…';syncCall({action:'changer_code',ancien:o,nouveau:n}).then(()=>{if(me){me.salt=uid();me.h=hp(n,me.salt);persist()}close();toast('Code modifié')}).catch(e=>{er.textContent=gMsg(e)});return}
  case 'mymail':{const er=document.getElementById('ser');er.textContent='Envoi de l’e-mail…';syncCall({action:'code_oublie'}).then(j=>{er.style.color='var(--ok,#0b7a55)';er.textContent='Code envoyé à '+(j.email||'ton adresse')+'. Écris-le dans « Code actuel » (valable 1 heure).'}).catch(e=>{er.textContent=gMsg(e)});return}
+ case 'synow':{const er=document.getElementById('syer');if(er)er.textContent='Synchronisation…';syncTick(true).then(()=>{const x=document.getElementById('syer');if(x)x.textContent=syncCfg().err?('Échec : '+syncCfg().err):'Synchronisé ✓';render()});return}
  case 'syout':me=null;try{localStorage.removeItem(SK)}catch(e){}syncSet({act:0,perso:0});stack=[];gEmail='';authGate();return;
  case 'uadd':modal(`<h3>Ajouter une personne</h3><p class="note">Elle reçoit un e-mail avec son identifiant et un code à usage unique, puis choisit son propre code.</p><div class="field"><label for="ua">Prénoms</label><input id="ua" autocomplete="off"></div><div class="field"><label for="ub">Nom</label><input id="ub" autocomplete="off"></div><div class="field"><label for="uc">Adresse e-mail</label><input id="uc" type="email" inputmode="email" autocomplete="off" autocapitalize="none" spellcheck="false"></div><div class="field"><label for="ud">Rôle</label><select id="ud"><option value="vente">Vendeur (ventes et encaissements)</option><option value="admin">Administrateur (tout)</option></select></div><div class="err" id="ser"></div>${btns('douadd')}`);return
  case 'douadd':{const p=val('ua').trim(),n=val('ub').trim(),em=val('uc').trim().toLowerCase(),r=val('ud'),er=document.getElementById('ser');
@@ -2036,7 +2111,7 @@ document.addEventListener('click',e=>{
  case 'dorz':{const er=document.getElementById('rzer');if(val('rzt').trim().toUpperCase()!=='ZERO'){er.textContent='Écris ZERO pour confirmer.';return}
   er.textContent='Remise à zéro en cours…';exportData();const c=syncCfg(),nv=mkEmpty();nv.users=REAL.users;
   const fin=()=>{REAL=nv;keepMe();persist();lastSent=JSON.stringify(REAL);close();stack=[];view='home';toast('Tout est remis à zéro');render()};
-  if(c.url&&c.act&&role==='admin')syncCall({action:'backup',json:JSON.stringify(nv)}).then(fin).catch(e=>{er.textContent='Impossible de vider la copie du Sheet : '+gMsg(e)+' Rien n’a été effacé.'});else fin();return}
+  if(c.url&&c.act&&role==='admin')syncCall({action:'reinit_donnees'}).then(j=>{S2={seq:0,epoch:j.epoch,known:{},skew:S2.skew};s2save();return syncCall({action:'backup',json:JSON.stringify(nv)})}).then(fin).catch(e=>{er.textContent='Impossible de vider la copie du Sheet : '+gMsg(e)+' Rien n’a été effacé.'});else fin();return}
  case 'cplink':cpTxt(b.dataset.u);return;
  case 'uplus':{const u=(SUL||[]).find(x=>x.email===b.dataset.em);if(!u)return;const em=esc(u.email);
   modal(`<h3>${esc((u.prenoms+' '+u.nom).trim())}</h3><p class="note">${em}</p><div class="col" style="display:grid;gap:8px"><button class="btn l" data-a="urn" data-em="${em}">Renommer</button><button class="btn l" data-a="uop" data-op="renvoyer" data-em="${em}">Renvoyer un code par e-mail</button><button class="btn l" data-a="uop" data-op="reinit" data-em="${em}">Nouveau code (l’ancien ne marche plus)</button><button class="btn r" data-a="usdel" data-em="${em}">Supprimer ce compte</button><button class="btn l" data-a="mclose">Fermer</button></div>`);return}
@@ -2114,6 +2189,12 @@ document.addEventListener('click',e=>{
  case 'pickcl':draft.cl=b.dataset.id;render();return;
  case 'clBack':back();return;
  case 'newCl':modal(`<h3>Nouveau revendeur</h3><div class="field"><label for="nn">Nom</label><input id="nn"></div><div class="field"><label for="nt">Contact</label><input id="nt" inputmode="tel"></div>${btns('doCl')}`);return;
+ case 'clEdit':{const cl=c.clients.find(x=>x.id===b.dataset.id);if(!cl)return;clEditId=cl.id;modal(`<h3>Modifier le client</h3><div class="field"><label for="en">Nom</label><input id="en" value="${esc(cl.n)}" autocomplete="off"></div><div class="field"><label for="et">Téléphone</label><input id="et" type="tel" inputmode="tel" value="${esc(cl.tel||'')}" autocomplete="off"></div>${btns('doClEdit')}`);return}
+ case 'doClEdit':{const cl=c.clients.find(x=>x.id===clEditId),n=val('en').trim();if(!cl||!n)return;const old=cl.n;cl.n=n;cl.tel=val('et').trim();if(old!==n)logAdd('Client renommé : '+old+' → '+n,'');close();toast('Client modifié');render();return}
+ case 'clDel':{const cl=c.clients.find(x=>x.id===b.dataset.id);if(!cl)return;clEditId=cl.id;const nb=c.inv.filter(i=>i.cl===cl.id).length;
+  if(nb){modal(`<h3>Effacer ${esc(cl.n)} ?</h3><p class="note">Ce client a déjà ${nb} facture${nb>1?'s':''} : il ne peut pas être effacé, pour que les comptes restent justes. Si son nom est mal écrit, utilise <b>Modifier</b>.</p><div class="row"><button class="btn l" data-a="mclose">Compris</button></div>`);return}
+  modal(`<h3>Effacer ${esc(cl.n)} ?</h3><p class="note">Ce client n’a aucune vente. Il disparaît de la liste, sur tous tes appareils.</p><div class="row"><button class="btn l" data-a="mclose">Garder</button><button class="btn r" data-a="doClDel">Oui, effacer</button></div>`);return}
+ case 'doClDel':{const cl=c.clients.find(x=>x.id===clEditId);if(!cl||c.inv.some(i=>i.cl===cl.id))return;cl.del=true;logAdd('Client effacé : '+cl.n,'');close();sub=null;stack=[];view='cli';toast('Client effacé');render();return}
  case 'doCl':{const n=val('nn').trim();if(n){const id=uid();c.clients.push({id,n,tel:val('nt')});draft.cl=id;close();render()}return}
  case 'collect':modal(`<h3>Ramassage à la ferme</h3>${dateField('rd')}${sizeFields()}${noteField('rn')}<div style="height:12px"></div>${btns('doCol')}`);return;
  case 'doCol':{const qq={};document.querySelectorAll('[data-col]').forEach(x=>{const v=num(x.value);if(v)qq[x.dataset.col]=v});if(!Object.keys(qq).length)return;c.ram.push({id:uid(),d:val('rd')||TODAY,q:qq,note:val('rn')});close();toast('Stock mis à jour');render();return}
@@ -2204,7 +2285,7 @@ const EYE_ON='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke
 function eyeUp(){document.querySelectorAll('input[type=password]:not([data-eye])').forEach(i=>{i.dataset.eye='1';const w=document.createElement('span');w.className='pw';i.parentNode.insertBefore(w,i);w.appendChild(i);const b=document.createElement('button');b.type='button';b.className='eye';b.setAttribute('aria-label','Afficher le code');b.innerHTML=EYE_ON;w.appendChild(b)})}
 try{new MutationObserver(eyeUp).observe(document.body,{childList:true,subtree:true});eyeUp()}catch(e){}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.eye');if(!b)return;e.preventDefault();e.stopPropagation();const i=b.parentNode.querySelector('input');if(!i)return;const show=i.type==='password';i.type=show?'text':'password';b.innerHTML=show?EYE_OFF:EYE_ON;b.setAttribute('aria-label',show?'Cacher le code':'Afficher le code');i.focus()},true);
-const APP_VERSION='2026.11.08-s';
+const APP_VERSION='2026.11.09-b';
 function showUpd(){let seen='';try{seen=localStorage.getItem('atody_ver')||''}catch(e){}
  try{localStorage.setItem('atody_ver',APP_VERSION)}catch(e){}
  if(!seen||seen===APP_VERSION)return;const sp=document.getElementById('splash');if(!sp)return;
