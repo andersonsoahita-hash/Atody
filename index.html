@@ -1773,8 +1773,9 @@ function swSave(){const w=sw,er=document.getElementById('swer');
  REAL.setup=true;sw=null;applyFixed();stack=[];view='home';sub=null;toast('Situation de départ enregistrée');render()}
 function vSet(){
  const c=cur();
- return setupCard()+usersCard()+syncCard()+resetCard()+`<div class="card"><h3>Mode formation</h3><div class="sub">Des données d’exemple pour s’entraîner sans risque. Rien ne touche les vraies données, et tout s’efface en quittant.</div>
- <div class="row"><button class="btn ${training?'l':'g'}" data-a="${training?'trainOff':'trainOn'}">${training?'Quitter le mode formation':'Démarrer le mode formation'}</button>${training?`<button class="btn l" data-a="trainZero">Mettre à vide</button><button class="btn l" data-a="trainCopy">Reprendre l’état actuel</button>`:''}</div></div>
+ const trainC=`<div class="card"><h3>Mode formation</h3><div class="sub">Des données d’exemple pour s’entraîner sans risque. Rien ne touche les vraies données, et tout s’efface en quittant.</div>
+ <div class="row"><button class="btn ${training?'l':'g'}" data-a="${training?'trainOff':'trainOn'}">${training?'Quitter le mode formation':'Démarrer le mode formation'}</button>${training?`<button class="btn l" data-a="trainZero">Mettre à vide</button><button class="btn l" data-a="trainCopy">Reprendre l’état actuel</button>`:''}</div></div>`;
+ return setupCard()+trainC+usersCard()+syncCard()+resetCard()+`
  <h2>Apparence et langue</h2><div class="card"><div class="setrow"><span>Thème</span><span class="seg"><button class="${theme==='auto'?'on':''}" data-a="setTheme" data-k="auto">Auto</button><button class="${theme==='light'?'on':''}" data-a="setTheme" data-k="light">Clair</button><button class="${theme==='dark'?'on':''}" data-a="setTheme" data-k="dark">Sombre</button></span></div>
  <div class="setrow"><span>${t('lang')}</span><span class="seg"><button class="${lang==='fr'?'on':''}" data-a="lang" data-k="fr">Français</button><button class="${lang==='mg'?'on':''}" data-a="lang" data-k="mg">Malagasy</button></span></div></div>
  <h2>${t('prices')} (Ar)</h2><div class="card">${SIZES.map(k=>`<div class="setrow"><b>Taille ${k}</b><input inputmode="numeric" data-price="${k}" value="${c.prices[k]}" aria-label="${k}"></div>`).join('')}<p class="note">Un changement de prix ne modifie jamais les anciennes factures.</p></div>
@@ -2306,7 +2307,7 @@ const EYE_ON='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke
 function eyeUp(){document.querySelectorAll('input[type=password]:not([data-eye])').forEach(i=>{i.dataset.eye='1';const w=document.createElement('span');w.className='pw';i.parentNode.insertBefore(w,i);w.appendChild(i);const b=document.createElement('button');b.type='button';b.className='eye';b.setAttribute('aria-label','Afficher le code');b.innerHTML=EYE_ON;w.appendChild(b)})}
 try{new MutationObserver(eyeUp).observe(document.body,{childList:true,subtree:true});eyeUp()}catch(e){}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.eye');if(!b)return;e.preventDefault();e.stopPropagation();const i=b.parentNode.querySelector('input');if(!i)return;const show=i.type==='password';i.type=show?'text':'password';b.innerHTML=show?EYE_OFF:EYE_ON;b.setAttribute('aria-label',show?'Cacher le code':'Afficher le code');i.focus()},true);
-const APP_VERSION='2026.11.09-d';
+const APP_VERSION='2026.11.09-e';
 function showUpd(){let seen='';try{seen=localStorage.getItem('atody_ver')||''}catch(e){}
  try{localStorage.setItem('atody_ver',APP_VERSION)}catch(e){}
  if(!seen||seen===APP_VERSION)return;const sp=document.getElementById('splash');if(!sp)return;
