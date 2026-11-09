@@ -812,6 +812,23 @@ body{background:linear-gradient(160deg,var(--bg),color-mix(in srgb,var(--c4) 9%,
 html,body{max-width:100%;overflow-x:clip;touch-action:manipulation;-webkit-text-size-adjust:100%}
 .seg{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}.seg::-webkit-scrollbar{display:none}.seg button{flex:none}
 @media(max-width:480px){.seg button{padding:9px 12px;font-size:14px}}
+.bigrow .big{min-height:88px;font-size:21px}
+.stkbar{display:grid;gap:10px;margin:0 0 12px;padding:12px 14px;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+.stkbar small{display:block;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px}
+.stkbar span{display:flex;flex-wrap:wrap;gap:4px 14px}
+.stkbar b.z{color:var(--red)}
+.swarn{display:grid;gap:4px;margin:12px 0;padding:12px 14px;border-radius:14px;border:2px solid var(--red);background:color-mix(in srgb,var(--red) 9%,var(--surface));color:var(--fg);font-size:14px}
+.dlcard h3{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.dlr{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.dli{flex:1;min-width:0;text-align:left;background:none;border:0;color:inherit;padding:4px 0;display:grid;gap:2px;font:inherit}
+.dli small{color:var(--muted)}
+.dlb{flex:none;min-height:48px}
+.dlbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.dlbtns .big{min-height:76px;font-size:18px}
+@media (max-width:420px){.dlbtns{grid-template-columns:1fr}}
+.paper .wm2{position:absolute;left:26px;top:128px;transform:rotate(-8deg);font-family:var(--fd);font-weight:700;font-size:28px;letter-spacing:.08em;border:4px solid;border-radius:12px;padding:2px 12px;opacity:.85;pointer-events:none}
+.paper .wm2.g{color:#1E7B4F}.paper .wm2.a{color:#1F6FB5}
+@media (max-width:560px){.paper .wm2{font-size:18px;top:150px;left:16px}}
 </style>
 
 <div class="splash" id="splash"><div class="sp-in"><div class="sp-streaks" aria-hidden="true"></div>
@@ -930,6 +947,16 @@ const allPays=()=>liveInv().flatMap(i=>vp(i).map(p=>({...p,inv:i})));
 const liveExp=()=>cur().exp.filter(e=>!e.x);
 const sumQ=o=>Object.values(o).reduce((a,b)=>a+(b||0),0);
 const dueTotal=()=>liveInv().reduce((s,i)=>s+Math.max(0,rest(i)),0);
+const isPend=i=>!i.x&&i.dl==='p';
+const pendList=()=>cur().inv.filter(isPend).sort((a,b)=>(a.due||'9').localeCompare(b.due||'9')||a.d.localeCompare(b.d));
+const eggsTxt=q=>SIZES.filter(k=>(q[k]||0)>0).map(k=>k+' '+q[k]).join(' · ');
+function pendEggs(){const c=cur(),lr=c.ram.filter(r=>!r.x).map(r=>r.d).sort().pop()||'';if(!lr)return 0;return c.pon.filter(p=>!p.x&&p.d>lr).reduce((s,p)=>s+p.n,0)}
+function stockWarn(){const sc=stockCalc();const bad=SIZES.filter(k=>(draft.q[k]||0)>0&&(draft.q[k]||0)>sc[k].s);if(!bad.length)return '';const pe=pendEggs();
+ return `<div class="swarn"><b>Pas disponible tout de suite</b><span>${bad.map(k=>`${k} : ${draft.q[k]} demandés, ${Math.max(0,sc[k].s)} en stock`).join(' · ')}.</span><span>${pe?`Environ ${pe} œufs pondus attendent le ramassage : ils seront disponibles après. `:''}Tu peux noter la commande « À livrer plus tard ».</span></div>`}
+function stockBar(){const sc=stockCalc(),pe=pendEggs(),res=pendList().reduce((a,i)=>a+sumQ(i.q),0);
+ return `<div class="stkbar"><div><small>Disponible maintenant</small><span>${SIZES.map(k=>`<b class="${sc[k].s<=0?'z':''}">${k} ${Math.max(0,sc[k].s)}</b>`).join('')}</span></div>${res?`<div><small>Déjà promis, à livrer</small><span><b>${res}</b> œufs (déjà retirés du stock ci-dessus)</span></div>`:''}${pe?`<div><small>Pondus, pas encore ramassés</small><span><b>≈ ${pe}</b> œufs, disponibles après ramassage (moins la casse)</span></div>`:''}</div>`}
+function delivCard(){const L=pendList();if(!L.length)return '';const td=L.filter(i=>i.due&&i.due<=TODAY).length;
+ return `<div class="card dlcard"><h3>À livrer <b>${L.length}</b>${td?`<span class="tag late">${td} pour aujourd’hui ou en retard</span>`:''}</h3>${L.map(i=>`<div class="dlr"><button class="dli" data-a="open" data-id="${i.id}"><b>${esc(cname(i.cl))}</b><small>${eggsTxt(i.q)}${i.due?' · pour '+(i.due<TODAY?'le '+dfmt(i.due)+' (en retard)':i.due===TODAY?'aujourd’hui':dfmt(i.due)):''}</small></button><button class="btn g dlb" data-a="deliver" data-id="${i.id}">Livré ✓</button></div>`).join('')}</div>`}
 const encTotal=()=>allPays().reduce((s,p)=>s+p.a,0);
 const expTotal=()=>liveExp().reduce((s,e)=>s+e.a,0);
 const liveOwn=()=>(cur().own||[]).filter(o=>!o.x);
@@ -1013,7 +1040,7 @@ function multiModal(){const c=cur(),l=[...selInv].map(id=>c.inv.find(x=>x.id===i
  modal(`<h3>Encaisser ${l.length} facture${l.length>1?'s':''}</h3><p class="note">Chaque montant est déjà rempli avec le reste à payer. Change-le si le client ne règle qu’une partie.</p><div class="plan">${l.map(i=>`<div class="mpr"><span><b>${esc(cname(i.cl))}</b><small>${esc(label(i))} · reste ${ar(rest(i))}</small></span><input data-mp="${i.id}" inputmode="numeric" value="${rest(i)}" aria-label="Montant ${esc(cname(i.cl))}" autocomplete="off"></div>`).join('')}</div><div class="mpt"><span>Total encaissé</span><b id="mpt">${ar(l.reduce((a,i)=>a+rest(i),0))}</b></div><div class="field"><label for="pby">Encaissé par</label><select id="pby">${c.people.map(p=>`<option ${p===meName()?'selected':''}>${esc(p)}</option>`).join('')}</select></div><div class="err" id="per"></div><div class="row"><button class="btn l" data-a="mclose">${t('cancel')}</button><button class="btn g" data-a="mpgo">Valider</button></div>`)}
 function invRow(i){
  const s=st(i),late=(s==='red'||s==='amber')&&dayDiff(i.d)>=5,pct=tot(i)?Math.min(100,paid(i)/tot(i)*100):0,why=i.x&&i.x.why?' · '+esc(i.x.why):'';
- return `<button class="inv s-${s} ${s==='void'?'void':''}" data-a="open" data-id="${i.id}"><span class="dot"></span><span class="mid"><span class="l1"><b>${esc(cname(i.cl))}</b><em>${i.no?label(i):''}</em>${i.no?'':'<span class="tag wait">'+t('wait')+'</span>'}${late?`<span class="tag late">${t('late')}</span>`:''}${s==='void'?'<span class="tag void">Annulée</span>':''}</span><small>${dfmt(i.d)} · ${i.amt!=null?'reprise de l’ancien carnet':sumQ(i.q)+' '+t('eggs')}${why}</small>${s==='amber'?`<span class="pg"><i style="width:${pct}%"></i></span>`:''}</span>
+ return `<button class="inv s-${s} ${s==='void'?'void':''}" data-a="open" data-id="${i.id}"><span class="dot"></span><span class="mid"><span class="l1"><b>${esc(cname(i.cl))}</b><em>${i.no?label(i):''}</em>${i.no?'':'<span class="tag wait">'+t('wait')+'</span>'}${late?`<span class="tag late">${t('late')}</span>`:''}${s==='void'?'<span class="tag void">Annulée</span>':''}${isPend(i)?'<span class="tag">À livrer</span>':''}</span><small>${dfmt(i.d)} · ${i.amt!=null?'reprise de l’ancien carnet':sumQ(i.q)+' '+t('eggs')}${why}</small>${s==='amber'?`<span class="pg"><i style="width:${pct}%"></i></span>`:''}</span>
  <span class="amt">${s==='void'?ar(tot(i)):s==='green'?ar(tot(i)):ar(rest(i))}<small>${s==='green'?t('closed'):s==='amber'?t('rest')+' · '+t('paid').toLowerCase()+' '+nf(paid(i)):s==='void'?'':t('todo')}</small></span></button>`}
 
 function eggSvg(cls){return `<svg class="${cls}" viewBox="0 0 220 280" aria-hidden="true"><defs>
@@ -1057,7 +1084,7 @@ function vHome(){
  <div class="field"><label for="hfcl">Personne</label><select id="hfcl"><option value="">Toutes</option>${[...c.clients.filter(x=>!x.del)].sort((a,b)=>a.n.localeCompare(b.n)).map(x=>`<option value="${x.id}" ${hf.cl===x.id?'selected':''}>${esc(x.n)}</option>`).join('')}</select></div>
  <div class="field"><label for="hfmin">Montant minimum (Ar)</label><input id="hfmin" inputmode="numeric" value="${esc(hf.min)}" placeholder="ex. 100000"></div><div class="field"><label for="hfmax">Montant maximum (Ar)</label><input id="hfmax" inputmode="numeric" value="${esc(hf.max)}" placeholder="ex. 500000"></div></div>
  <div class="l1" style="gap:10px;margin-top:4px"><span class="seg">${[['all','Toutes'],['open','À encaisser'],['done','Soldées']].map(([v,l])=>`<button class="${hf.st===v?'on':''}" data-a="hfst" data-v="${v}">${l}</button>`).join('')}</span><button class="btn l s ${hf.late?'tg':''}" data-a="hflate">${hf.late?'✓ ':''}À relancer seulement</button><button class="link" data-a="hfreset">Tout effacer</button></div></div>`;
- return heroEgg()+homeBanners()+`<div class="bigrow"><button class="big" data-a="new">${ic('plus')}${t('newsale')}</button><button class="big gr" data-a="payopen">${ic('cash')}Enregistrer un paiement</button></div>${hasOld()&&role!=='cash'?`<button class="big gr2" data-a="payold" style="width:100%;margin-top:10px">${ic('cash')}Ancienne dette encaissée</button>`:''}
+ return `<div class="bigrow"><button class="big" data-a="new">${ic('plus')}${t('newsale')}</button><button class="big gr" data-a="payopen">${ic('cash')}Encaisser un paiement</button></div>${hasOld()&&role!=='cash'?`<button class="big gr2" data-a="payold" style="width:100%;margin-top:10px">${ic('cash')}Ancienne dette encaissée</button>`:''}${delivCard()}${heroEgg()}${homeBanners()}
  <div class="srow"><input class="search" id="q" value="${esc(q)}" placeholder="${t('search')}" autocomplete="off" aria-label="${t('search')}"><button class="btn l fbtn ${n?'act':''}" data-a="hftog" aria-expanded="${hf.open}">Filtres${n?`<span class="bdg">${n}</span>`:''}</button></div>
  ${hf.open?panel:''}${n?`<div class="note fres">${open.length+done.length} facture${open.length+done.length>1?'s':''} trouvée${open.length+done.length>1?'s':''} · reste à encaisser sur ces résultats : <b>${ar(open.reduce((s,i)=>s+rest(i),0))}</b></div>`:''}
  <h2>${t('todo')} <b>${ar(open.reduce((s,i)=>s+rest(i),0))}</b></h2>${selHead(open)}<div class="list">${open.map(invRowSel).join('')||`<div class="card note">${n?'Aucune facture ne correspond.':t('none')}</div>`}</div>
@@ -1067,17 +1094,18 @@ function vNew(){
  const c=cur(),n=sumQ(draft.q),sum=Object.entries(draft.q).reduce((s,[k,v])=>s+v*c.prices[k],0);
  return `<div class="cpick"><div class="cph"><b>1. Qui achète ?</b><span>${draft.cl?'✓ '+esc(cname(draft.cl)):'Touche un nom'}</span></div><div class="cpg">${[...c.clients.filter(x=>!x.del)].sort((a,b)=>liveInv().filter(i=>i.cl===b.id).length-liveInv().filter(i=>i.cl===a.id).length||a.n.localeCompare(b.n)).map(x=>`<button class="cb ${draft.cl===x.id?'on':''}" data-a="pickcl" data-id="${x.id}" aria-pressed="${draft.cl===x.id}"><span class="av2">${esc(x.n[0])}</span><span>${esc(x.n)}</span></button>`).join('')}<button class="cb add" data-a="newCl"><span class="av2">+</span><span>Nouveau revendeur</span></button></div></div>
  <div class="cph" style="margin:14px 2px 8px"><b>2. Combien d’œufs ?</b></div>
- <div class="sizes">${SIZES.map(s=>`<div class="sz">${szb(s)}<span class="p">${ar(c.prices[s])}</span><span class="step"><button data-a="dec" data-s="${s}" aria-label="−10">−</button><input inputmode="numeric" data-s="${s}" value="${draft.q[s]||''}" placeholder="0" aria-label="${s}"><button data-a="inc" data-s="${s}" aria-label="+10">+</button></span></div>`).join('')}</div>
- <div class="totalbar"><span>${n} ${t('eggs')}<br><b>${ar(sum)}</b></span><button class="btn g" data-a="preview" ${n&&draft.cl?'':'disabled'}>${t('see')}</button></div>`}
+ ${stockBar()}<div class="sizes">${SIZES.map(s=>`<div class="sz">${szb(s)}<span class="p">${ar(c.prices[s])}</span><span class="step"><button data-a="dec" data-s="${s}" aria-label="−10">−</button><input inputmode="numeric" data-s="${s}" value="${draft.q[s]||''}" placeholder="0" aria-label="${s}"><button data-a="inc" data-s="${s}" aria-label="+10">+</button></span></div>`).join('')}</div>
+ <div id="swarn">${stockWarn()}</div><div class="totalbar"><span>${n} ${t('eggs')}<br><b>${ar(sum)}</b></span><button class="btn g" data-a="preview" ${n&&draft.cl?'':'disabled'}>${t('see')}</button></div>`}
 
 /* ---------- facture ---------- */
 function facture(i,isDraft){
  const c=cur(),cl=c.clients.find(x=>x.id===i.cl)||{},lines=SIZES.filter(k=>(i.q[k]||0)>0).map(k=>[k,i.q[k]]),s=isDraft?'':st(i);
  const wm=s==='green'?'<div class="wm g">PAYÉE</div>':s==='void'?'<div class="wm n">ANNULÉE</div>':'';
+ const wm2=isDraft||i.x||i.amt!=null?'':i.dl==='p'?'<div class="wm2 a">À LIVRER</div>':'<div class="wm2 g">LIVRÉ</div>';
  const badge=isDraft?'Brouillon':s==='void'?'Annulée':s==='green'?'Payée':s==='amber'?'Partiellement payée':'À payer';
  const pu=k=>(i.pu||c.prices)[k];
- return `<div class="paper">${wm}<div class="band"><div class="co">${LOGO}<div><b>ATODY</b><span>Œufs frais</span></div></div><div class="ti"><small>FACTURE</small><b>${isDraft?'—':i.no?label(i):'N° en attente'}</b></div></div>
- <div class="body"><div class="meta"><div><small>Facturé à</small><b>${esc(cl.n||'')}</b><br><span style="color:#6A7B8E">${esc(cl.tel||'')}</span></div><div><small>Date</small><b>${dlong(i.d).replace(/^./,m=>m.toUpperCase())}</b></div><div><small>Statut</small><b>${badge}</b>${!isDraft&&!i.no?'<br><span style="color:#9A6A00;font-size:13px">Le numéro officiel arrive à la reconnexion.</span>':''}</div></div>
+ return `<div class="paper">${wm}${wm2}<div class="band"><div class="co">${LOGO}<div><b>ATODY</b><span>Œufs frais</span></div></div><div class="ti"><small>FACTURE</small><b>${isDraft?'—':i.no?label(i):'N° en attente'}</b></div></div>
+ <div class="body"><div class="meta"><div><small>Facturé à</small><b>${esc(cl.n||'')}</b><br><span style="color:#6A7B8E">${esc(cl.tel||'')}</span></div><div><small>Date</small><b>${dlong(i.d).replace(/^./,m=>m.toUpperCase())}</b></div><div><small>Statut</small><b>${badge}${!isDraft&&isPend(i)?' · à livrer':''}</b>${!isDraft&&!i.no?'<br><span style="color:#9A6A00;font-size:13px">Le numéro officiel arrive à la reconnexion.</span>':''}</div></div>
   <table><thead><tr><th>Taille</th><th>Quantité</th><th>Prix unit. (Ar)</th><th>Montant (Ar)</th></tr></thead><tbody>${i.amt!=null?`<tr><td colspan="3">Ancien solde repris du carnet (avant le suivi sur ATODY)</td><td><b>${nf(i.amt)}</b></td></tr>`:lines.map(([k,v])=>`<tr><td>${szb(k)}</td><td>${nf(v)}</td><td>${nf(pu(k))}</td><td><b>${nf(v*pu(k))}</b></td></tr>`).join('')}</tbody></table>
  <div class="tots"><div><span>Total des œufs</span><span>${nf(sumQ(i.q))}</span></div><div class="t"><span>Total</span><span>${ar(tot(i))}</span></div>
  ${isDraft?'':`<div><span>Déjà payé</span><span>${ar(vp(i).reduce((a,p)=>a+p.a,0))}</span></div><div class="r ${s==='green'?'z':''}"><span>Reste à payer</span><span>${ar(s==='void'?0:Math.max(0,rest(i)))}</span></div>`}</div>
@@ -1087,7 +1115,8 @@ function facture(i,isDraft){
 function vPreview(){
  const i={cl:draft.cl,d:TODAY,q:draft.q,pu:null,pays:[]};
  return `<p style="font-family:var(--fd);font-size:19px;margin:0 0 12px">${t('ok')}</p>${facture(i,true)}
- <div class="row" style="margin-top:14px"><button class="btn l" data-a="edit">${t('cancel')}</button><button class="btn g" data-a="validate">${t('valid')}</button></div>`}
+ ${stockWarn()}<div class="field" style="margin-top:14px"><label for="dlDue">Pour quand ? (si à livrer plus tard, facultatif)</label><input type="date" id="dlDue" min="${TODAY}"></div>
+ <div class="dlbtns"><button class="big gr" data-a="validate">✓ Livré maintenant</button><button class="big" data-a="validate" data-dl="p">À livrer plus tard</button></div><button class="btn l" data-a="edit" style="width:100%;margin-top:10px">${t('cancel')}</button>`}
 
 function invNav(){const k=invCtx.indexOf(sub);if(k<0||invCtx.length<2)return '';const p=invCtx[k-1],n=invCtx[k+1];
  return `<div class="invnav"><button class="btn l" data-a="invnav" data-id="${p||''}" ${p?'':'disabled'}>‹ Précédente</button><span>${k+1} / ${invCtx.length}</span><button class="btn l" data-a="invnav" data-id="${n||''}" ${n?'':'disabled'}>Suivante ›</button></div>`}
@@ -1103,7 +1132,7 @@ function vInv(){
  const lv=liveInv().filter(x=>x.cl===i.cl),pd=lv.reduce((a,x)=>a+paid(x),0),dd=lv.reduce((a,x)=>a+Math.max(0,rest(x)),0);
  const sum=`<div class="card cinfo"><button class="link" data-a="cl2" data-id="${i.cl}" style="text-decoration:none;color:var(--fg);font-weight:700;font-size:17px;text-align:left;padding:0;min-height:0">${esc(cname(i.cl))} <span style="color:var(--muted);font-weight:500">· fiche ›</span></button><div class="cig"><div><small>A payé depuis le début</small><b class="pos">${ar(pd)}</b></div><div><small>Nous doit au total</small><b class="${dd>0?'neg':'pos'}">${ar(dd)}</b></div><div><small>Factures</small><b>${lv.length}</b></div></div></div>`;
  return `${invNav()}${sum}${facture(i)}
- <div style="margin-top:16px;display:grid;gap:10px">${!i.x&&rest(i)>0?`<button class="big gr" data-a="encaisser" data-id="${i.id}" style="min-height:62px">${ic('cash')}${t('pay')}</button>`:''}
+ <div style="margin-top:16px;display:grid;gap:10px">${isPend(i)?`<button class="big" data-a="deliver" data-id="${i.id}" style="min-height:62px">✓ Marquer comme livré</button>`:''}${!i.x&&rest(i)>0?`<button class="big gr" data-a="encaisser" data-id="${i.id}" style="min-height:62px">${ic('cash')}${t('pay')}</button>`:''}
  ${role==='admin'&&i.amt==null?`<div class="row" style="gap:8px;margin:12px 0"><button class="btn l s" data-a="invEdit" data-id="${i.id}">Corriger cette facture</button><button class="btn l s" data-a="invDel" data-id="${i.id}">Effacer cette facture</button></div>`:''}
  ${role==='admin'&&!i.x&&!vp(i).length?`<button class="link" data-a="cancelInv" data-id="${i.id}">Annuler cette facture (erreur de saisie)</button>`:''}
  ${role==='admin'&&!i.x&&vp(i).length?`<span class="note">Pour annuler cette facture, annule d’abord ses règlements.</span>`:''}</div>${invNav()}`}
@@ -2069,9 +2098,10 @@ document.addEventListener('click',e=>{
  case 'inc':case 'dec':{const s=b.dataset.s;draft.q[s]=Math.max(0,(draft.q[s]||0)+(a==='inc'?10:-10));render();return}
  case 'preview':go('preview');return;
  case 'edit':back();return;
- case 'validate':{const i={id:uid(),no:null,tmp:Date.now(),cl:draft.cl,d:TODAY,q:Object.fromEntries(Object.entries(draft.q).filter(([,v])=>v>0)),pu:{...c.prices},pays:[]};
-  c.inv.push(i);logAdd('Vente enregistrée',jcl(i.cl));if(syncOn()){i.no=null;syncKick(80)}else if(online)i.no=++c.counter;else queue.push(i.id);
-  toast(syncOn()?'Facture enregistrée · numéro en cours':online?'Facture '+label(i)+' enregistrée':'Enregistrée sur l’appareil, numéro en attente');draft={cl:'',q:{}};root('home');return}
+ case 'deliver':{const i=c.inv.find(x=>x.id===b.dataset.id);if(i&&i.dl==='p'){i.dl='d';i.dd=TODAY;logAdd('Livraison faite',jcl(i.cl));toast('Marqué comme livré')}render();return}
+ case 'validate':{const i={id:uid(),no:null,tmp:Date.now(),cl:draft.cl,d:TODAY,q:Object.fromEntries(Object.entries(draft.q).filter(([,v])=>v>0)),pu:{...c.prices},pays:[],...(b.dataset.dl==='p'?{dl:'p',due:val('dlDue')||''}:{dl:'d',dd:TODAY})};
+  c.inv.push(i);logAdd(i.dl==='p'?'Commande à livrer':'Vente livrée',jcl(i.cl)+(i.due?' · pour le '+dfmt(i.due):''));if(syncOn()){i.no=null;syncKick(80)}else if(online)i.no=++c.counter;else queue.push(i.id);
+  toast(i.dl==='p'?'Commande notée · à livrer':syncOn()?'Facture enregistrée · numéro en cours':online?'Facture '+label(i)+' enregistrée':'Enregistrée sur l’appareil, numéro en attente');draft={cl:'',q:{}};root('home');return}
  case 'open':invCtx=ctxIds();go('inv',b.dataset.id);return;
  case 'invnav':if(!b.dataset.id)return;sub=b.dataset.id;fresh=false;render();window.scrollTo(0,0);return;
  case 'encaisser':encModal(b.dataset.id,false);return;
@@ -2275,7 +2305,7 @@ document.addEventListener('input',e=>{
  if(e.target.id==='q'){q=e.target.value;render()}
  else if(e.target.id==='qc'){qc=e.target.value;render()}
  else if(e.target.dataset.s&&e.target.tagName==='INPUT'){draft.q[e.target.dataset.s]=num(e.target.value);const n=sumQ(draft.q),tb=document.querySelector('.totalbar');
-  if(tb){const sum=Object.entries(draft.q).reduce((s,[k,v])=>s+v*cur().prices[k],0);tb.querySelector('span').innerHTML=n+' '+t('eggs')+'<br><b>'+ar(sum)+'</b>';tb.querySelector('button').disabled=!(n&&draft.cl)}}
+  if(tb){const sum=Object.entries(draft.q).reduce((s,[k,v])=>s+v*cur().prices[k],0);tb.querySelector('span').innerHTML=n+' '+t('eggs')+'<br><b>'+ar(sum)+'</b>';tb.querySelector('button').disabled=!(n&&draft.cl)}const sw=document.getElementById('swarn');if(sw)sw.innerHTML=stockWarn()}
 });
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.a==='net')setOnline(!online)});
 const SPLASH_HTML=document.getElementById('splash')?document.getElementById('splash').outerHTML:'';
@@ -2308,7 +2338,7 @@ const EYE_ON='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke
 function eyeUp(){document.querySelectorAll('input[type=password]:not([data-eye])').forEach(i=>{i.dataset.eye='1';const w=document.createElement('span');w.className='pw';i.parentNode.insertBefore(w,i);w.appendChild(i);const b=document.createElement('button');b.type='button';b.className='eye';b.setAttribute('aria-label','Afficher le code');b.innerHTML=EYE_ON;w.appendChild(b)})}
 try{new MutationObserver(eyeUp).observe(document.body,{childList:true,subtree:true});eyeUp()}catch(e){}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.eye');if(!b)return;e.preventDefault();e.stopPropagation();const i=b.parentNode.querySelector('input');if(!i)return;const show=i.type==='password';i.type=show?'text':'password';b.innerHTML=show?EYE_OFF:EYE_ON;b.setAttribute('aria-label',show?'Cacher le code':'Afficher le code');i.focus()},true);
-const APP_VERSION='2026.11.09-f';
+const APP_VERSION='2026.11.09-g';
 function showUpd(){let seen='';try{seen=localStorage.getItem('atody_ver')||''}catch(e){}
  try{localStorage.setItem('atody_ver',APP_VERSION)}catch(e){}
  if(!seen||seen===APP_VERSION)return;const sp=document.getElementById('splash');if(!sp)return;
