@@ -40,7 +40,7 @@ button{cursor:pointer}
 svg{display:block}
 :focus-visible{outline:3px solid var(--green);outline-offset:2px}
 .app{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100vh}
-.side{background:linear-gradient(180deg,var(--navy),#0A1D33);color:#fff;padding:24px 14px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh}
+.side{background:linear-gradient(180deg,var(--navy),#0A1D33);color:#fff;padding:24px 14px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;height:100dvh;align-self:start;overflow-y:auto;overflow-x:hidden}
 .brand{display:flex;gap:11px;align-items:center;padding:0 8px 22px}
 .logo{width:42px;height:42px;border-radius:12px;background:#fff;color:#0F2A47;display:grid;place-items:center;flex:none}
 .logo svg{width:24px;height:24px}
@@ -810,7 +810,7 @@ body{background:linear-gradient(160deg,var(--bg),color-mix(in srgb,var(--c4) 9%,
 .pw{position:relative;display:block}.pw input{padding-right:48px!important}.pw .eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:38px;height:38px;display:grid;place-items:center;border:0;background:none;color:var(--muted);border-radius:10px;cursor:pointer;padding:0;min-height:0;box-shadow:none}.pw .eye:hover{color:var(--fg)}
 @supports (-webkit-hyphens:none){.pw .eye{right:40px}.pw input{padding-right:84px!important}}
 .banner>.row{flex:1 1 100%!important;min-width:0;flex-wrap:wrap;gap:8px}.banner>.row button{flex:1 1 150px;min-width:0}
-html,body{max-width:100%;overflow-x:hidden}
+html,body{max-width:100%;overflow-x:clip}
 .seg{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}.seg::-webkit-scrollbar{display:none}.seg button{flex:none}
 @media(max-width:480px){.seg button{padding:9px 12px;font-size:14px}}
 </style>
@@ -910,7 +910,7 @@ function mkDemo(){
  S.users=[];S.fixed=[];S.cash0=0;S.start='2026-10-01';S.setup=true;S.lastBackup='';
  return S;
 }
-function mkEmpty(){return {prices:{S:450,M:500,L:550,XL:600,XXL:650,'3XL':700,'4XL':750,Extra:800},cats:['Provende','Eau','Vitamines','Médicaments','Porteurs','Employés','Carburant','Autres'],people:[],devices:[],clients:[],inv:[],pon:[],ram:[],cas:[],hens:[],exp:[],own:[],counter:0,users:[],fixed:[],cash0:0,start:'',setup:false,lastBackup:'',budget:{},budget1:null,log:[],checks:[],cfgm:{}}}
+function mkEmpty(){return {prices:{S:450,M:500,L:550,XL:600,XXL:650,'3XL':700,'4XL':750,Extra:800},cats:['Provende','Eau','Vitamines','Médicaments','Porteurs','Employés','Carburant','Autres'],people:[],devices:[],clients:[],inv:[],pon:[],ram:[],cas:[],hens:[],exp:[],own:[],counter:0,users:[],fixed:[],cash0:0,start:'',setup:false,lastBackup:'',budget:{},budget1:null,log:[],checks:[],cfgm:{},gone:[]}}
 function mig(S){const E=mkEmpty();Object.keys(E).forEach(k=>{if(S[k]==null)S[k]=E[k]});return S}
 const KEY='atodyv_v1';
 function loadReal(){try{const j=JSON.parse(localStorage.getItem(KEY));if(j&&j.REAL&&Array.isArray(j.REAL.inv))return mig(j.REAL)}catch(e){}return null}
@@ -1105,6 +1105,7 @@ function vInv(){
  const sum=`<div class="card cinfo"><button class="link" data-a="cl2" data-id="${i.cl}" style="text-decoration:none;color:var(--fg);font-weight:700;font-size:17px;text-align:left;padding:0;min-height:0">${esc(cname(i.cl))} <span style="color:var(--muted);font-weight:500">· fiche ›</span></button><div class="cig"><div><small>A payé depuis le début</small><b class="pos">${ar(pd)}</b></div><div><small>Nous doit au total</small><b class="${dd>0?'neg':'pos'}">${ar(dd)}</b></div><div><small>Factures</small><b>${lv.length}</b></div></div></div>`;
  return `${invNav()}${sum}${facture(i)}
  <div style="margin-top:16px;display:grid;gap:10px">${!i.x&&rest(i)>0?`<button class="big gr" data-a="encaisser" data-id="${i.id}" style="min-height:62px">${ic('cash')}${t('pay')}</button>`:''}
+ ${role==='admin'&&i.amt==null?`<div class="row" style="gap:8px;margin:12px 0"><button class="btn l s" data-a="invEdit" data-id="${i.id}">Corriger cette facture</button><button class="btn l s" data-a="invDel" data-id="${i.id}">Effacer cette facture</button></div>`:''}
  ${role==='admin'&&!i.x&&!vp(i).length?`<button class="link" data-a="cancelInv" data-id="${i.id}">Annuler cette facture (erreur de saisie)</button>`:''}
  ${role==='admin'&&!i.x&&vp(i).length?`<span class="note">Pour annuler cette facture, annule d’abord ses règlements.</span>`:''}</div>${invNav()}`}
 
@@ -1834,8 +1835,12 @@ function encModal(id,acc){
 function expModal(d){modal(`<h3>Nouvelle dépense</h3>${dateField('ed',d)}<div class="field"><label for="ec">Catégorie</label><select id="ec">${cur().cats.map(x=>`<option>${esc(x)}</option>`).join('')}</select></div><div class="field"><label for="ecn">Ou une nouvelle catégorie (facultatif)</label><input id="ecn" placeholder="ex. Réparation poulailler"></div><div class="field"><label for="ea">Montant (Ar)</label><input id="ea" inputmode="numeric"></div>${noteField('eno','ex. 6 sacs de 50 kg')}${btns('doExp')}`);setTimeout(()=>{const s=document.getElementById('ec');if(s)s.dispatchEvent(new Event('change',{bubbles:true}))},30)}
 
 /* ---------- v15 : corrections, budget, vérification de caisse ---------- */
-const logAdd=(t,why)=>{const c=cur();(c.log=c.log||[]).push({id:uid(),d:TODAY,t,why:why||'',by:meName()})};
-function logList(){const L=(cur().log||[]).slice(-6).reverse();return L.length?`<div class="olist" style="margin-top:12px"><small style="color:var(--muted)">Historique des corrections</small>${L.map(l=>`<div class="orow2 lg"><span><b>${esc(l.t)}</b><small>${dfmt(l.d)} · ${esc(l.by||'')}${l.why?' · '+esc(l.why):''}</small></span></div>`).join('')}</div>`:''}
+function goneAdd(tp,id){const c=cur();(c.gone=c.gone||[]).push({id:'g'+id,t:tp,tid:id,d:TODAY});const ar=c[tp];const i=ar.findIndex(z=>z.id===id);if(i>=0)ar.splice(i,1)}
+const logAdd=(t,why)=>{const c=cur();(c.log=c.log||[]).push({id:uid(),d:TODAY,at:Date.now(),t,why:why||'',by:meName()})};
+const jcl=id=>((cur().clients.find(x=>x.id===id)||{}).n||'client');
+const hm=at=>at?new Date(at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'';
+let logAll=false;
+function logList(){const A=cur().log||[];const L=(logAll?A.slice(-300):A.slice(-6)).reverse();return L.length?`<div class="olist" style="margin-top:12px"><small style="color:var(--muted)">Historique des corrections</small>${L.map(l=>`<div class="orow2 lg"><span><b>${esc(l.t)}</b><small>${dfmt(l.d)}${l.at?' à '+hm(l.at):''} · ${esc(l.by||'')}${l.why?' · '+esc(l.why):''}</small></span></div>`).join('')}${A.length>6?`<button class="btn ghost" data-a="logToggle" style="margin-top:8px;width:100%">${logAll?'Réduire':'Voir tout le journal ('+A.length+')'}</button>`:''}</div>`:''}
 function stEditModal(){const c=cur();modal(`<h3>Corriger la situation de départ</h3><p class="note">Rien n’est effacé : chaque correction est notée avec sa date et son motif.</p><div class="field"><label for="sd">Début du suivi</label><input type="date" id="sd" value="${c.start||TODAY}" max="${TODAY}"></div><div class="field"><label for="sc">Caisse de départ (Ar), facultatif</label><input id="sc" inputmode="numeric" value="${c.cash0||''}" placeholder="0"></div><div class="field"><label for="stw">Pourquoi ? (obligatoire)</label><input id="stw" placeholder="ex. j’avais oublié la caisse"></div><div class="err" id="ser"></div><div class="row"><button class="btn l" data-a="mclose">${t('cancel')}</button><button class="btn g" data-a="dostedit">${t('save')}</button></div>`)}
 function stOldModal(pre){const c=cur();modal(`<h3>Ajouter un ancien solde</h3><p class="note">Ce qu’un client devait déjà avant le suivi (colonne « Reste à payer » du carnet).</p><div class="field"><label for="soc">Client</label><select id="soc">${c.clients.map(x=>`<option value="${x.id}" ${x.id===pre?'selected':''}>${esc(x.n)}</option>`).join('')}<option value="" ${pre===''?'selected':''}>+ Nouveau client…</option></select></div><div class="field"><label for="son">Nom du nouveau client</label><input id="son" placeholder="seulement si nouveau"></div><div class="field"><label for="soa">Montant dû (Ar)</label><input id="soa" inputmode="numeric"></div><div class="field"><label for="sow">Pourquoi ? (obligatoire)</label><input id="sow" placeholder="ex. oublié au départ"></div><div class="err" id="ser"></div><div class="row"><button class="btn l" data-a="mclose">${t('cancel')}</button><button class="btn g" data-a="dostold">${t('save')}</button></div>`)}
 function budgetCard(){const c=cur(),B=c.budget||{},cats=c.cats.filter(x=>B[x]>0),ms=TODAY.slice(0,7),real=x=>liveExp().filter(e=>e.c===x&&e.d.slice(0,7)===ms).reduce((a,e)=>a+e.a,0),tp=cats.reduce((a,x)=>a+B[x],0),tr=cats.reduce((a,x)=>a+real(x),0),b1=c.budget1;
@@ -1865,7 +1870,7 @@ function vStart(){const c=cur(),adm=role==='admin';
  ${sec('Stock de départ','Les œufs en stock par taille ce jour-là.',(rams.map(r=>row(SIZES.filter(k=>r.q[k]).map(k=>k+' '+nf(r.q[k])).join(' · ')||'vide',dfmt(r.d)+(r.x?' · annulé : '+esc(r.x.why||''):''),adm&&!r.x?btn('stkedit','Modifier','data-id="'+r.id+'"')+btn('cancelGen','Annuler','data-kind="ram" data-id="'+r.id+'"'):'',!!r.x)).join('')||'<p class="note">Pas encore renseigné.</p>')+(adm&&!rams.some(r=>!r.x)?`<div style="margin-top:8px">${btn('stkedit','+ Ajouter le stock','data-id=""')}</div>`:''))}
  ${sec('Clients et anciens soldes','Ce que chaque client devait avant le suivi.',cl+(adm?`<div style="margin-top:8px">${btn('stold','+ Nouveau client avec ancien solde')}</div>`:''))}
  ${sec('Autres réglages','Ces éléments ont leur propre page.',`<div class="row" style="gap:8px;flex-wrap:wrap">${btn('goExp','Dépenses fixes et salaires')}${btn('goExp','Budget prévu')}${btn('goSet','Prix des œufs')}</div>`)}
- ${logList()?`<h2>Historique des corrections</h2><div class="card">${logList().replace('<small style="color:var(--muted)">Historique des corrections</small>','')}</div>`:''}`}
+ ${logList()?`<h2>Journal · qui a fait quoi</h2><div class="card">${logList().replace('<small style="color:var(--muted)">Historique des corrections</small>','')}</div>`:''}`}
 function henModal(id){const h=c0().hens.find(x=>x.id===id);modal(`<h3>${h?'Modifier':'Ajouter'} l’effectif de départ</h3><div class="field"><label for="hn">Nombre de poules</label><input id="hn" inputmode="numeric" value="${h?h.n:''}"></div>${h?'<div class="field"><label for="hw">Pourquoi ? (obligatoire)</label><input id="hw" placeholder="ex. j’avais mal compté"></div>':''}<div class="err" id="ser"></div><div class="row"><button class="btn l" data-a="mclose">${t('cancel')}</button><button class="btn g" data-a="dohen" data-id="${id||''}">${t('save')}</button></div>`)}
 const c0=()=>cur();
 function stkModal(id){const r=cur().ram.find(x=>x.id===id);modal(`<h3>${r?'Modifier':'Ajouter'} le stock de départ</h3>${SIZES.map(k=>`<div class="field"><label>Taille ${k}</label><input inputmode="numeric" data-sq="${k}" value="${r&&r.q[k]?r.q[k]:''}" placeholder="0"></div>`).join('')}${r?'<div class="field"><label for="kw">Pourquoi ? (obligatoire)</label><input id="kw" placeholder="ex. recompté"></div>':''}<div class="err" id="ser"></div><div class="row"><button class="btn l" data-a="mclose">${t('cancel')}</button><button class="btn g" data-a="dostk" data-id="${id||''}">${t('save')}</button></div>`)}
@@ -1901,8 +1906,8 @@ window.addEventListener('online',()=>syncBackup(false));
 var S2K=(window.ATODY_VENTE?'atodyv_':'atody_')+'s2',s2busy=false,s2last=0,s2timer=null,s2err=0,s2pend=0;
 var S2=(function(){try{var j=JSON.parse(localStorage.getItem(S2K));if(j&&j.known)return j}catch(e){}return {seq:0,epoch:'',known:{},skew:0}})();
 function s2save(){try{localStorage.setItem(S2K,JSON.stringify(S2))}catch(e){}}
-var SYNC_COLS=['clients','inv','pon','ram','cas','hens','exp','own','fixed','checks','log'],SYNC_CFG=['prices','cats','people','cash0','start','setup','budget','budget1'];
-function s2cols(){return syncCfg().role==='admin'?SYNC_COLS:['clients','inv']}
+var SYNC_COLS=['clients','inv','pon','ram','cas','hens','exp','own','fixed','checks','log','gone'],SYNC_CFG=['prices','cats','people','cash0','start','setup','budget','budget1'];
+function s2cols(){return syncCfg().role==='admin'?SYNC_COLS:['clients','inv','gone']}
 function s2cfg(){return syncCfg().role==='admin'?SYNC_CFG:[]}
 function syncOn(){var c=syncCfg();return !training&&!!c.url&&!!c.act&&!!c.dev}
 function isIdArr(a){return Array.isArray(a)&&a.length>0&&a.every(function(x){return x&&typeof x==='object'&&x.id!=null})}
@@ -1928,13 +1933,14 @@ function s2collect(){var out=[],now=Date.now()+(S2.skew||0),cm=REAL.cfgm=REAL.cf
  s2cfg().forEach(function(k){var key='cfg:'+k,h=hrec({id:k,v:REAL[k]});
   if(S2.known[key]!==h&&(cm[k]||h!==hrec({id:k,v:DEF[k]}))){var m=Math.max(now,(cm[k]||0)+1);cm[k]=m;out.push({t:'cfg',id:k,m:m,j:JSON.stringify({id:k,v:REAL[k],m:m}),key:key,h:h})}});
  s2pend=out.length;return out}
-function s2apply(rows){var changed=false,mine=(syncCfg().dev||'').slice(0,8),cols=s2cols(),cfgs=s2cfg();
- rows.forEach(function(r){if(r.a===mine)return;var rec;try{rec=JSON.parse(r.j)}catch(e){return}var key=r.t+':'+r.id;
+function s2apply(rows){var gs={};(REAL.gone||[]).forEach(function(g){gs[g.t+':'+g.tid]=1});var changed=false,mine=(syncCfg().dev||'').slice(0,8),cols=s2cols(),cfgs=s2cfg();
+ rows.forEach(function(r){if(r.a===mine)return;var rec;try{rec=JSON.parse(r.j)}catch(e){return}var key=r.t+':'+r.id;if(r.t!=='gone'&&gs[key])return;
   if(r.t==='cfg'){var k=r.id;if(cfgs.indexOf(k)<0)return;var cm=REAL.cfgm=REAL.cfgm||{},lm=cm[k]||0,v=REAL[k],nv=v,nm=lm;
    if(k==='cats'||k==='people'){nv=Array.from(new Set((v||[]).concat(rec.v||[])));nm=Math.max(lm,rec.m||0)}else if((rec.m||0)>lm){nv=rec.v;nm=rec.m}
    if(canon(nv)!==canon(v)){REAL[k]=nv;changed=true}cm[k]=nm;S2.known[key]=hrec({id:k,v:rec.v});return}
   if(cols.indexOf(r.t)<0)return;var arr=REAL[r.t];if(!Array.isArray(arr))return;var i=arr.findIndex(function(z){return z.id===rec.id});
   if(i<0){arr.push(rec);changed=true}else{var loc=arr[i],mg=mergeRec(loc,rec);if(canon(mg)!==canon(loc)){arr[i]=mg;changed=true}else if((mg.m||0)>(loc.m||0))arr[i]=mg}
+  if(r.t==='gone'){gs[rec.t+':'+rec.tid]=1;var ta=REAL[rec.t];if(Array.isArray(ta)){var j=ta.findIndex(function(z){return z.id===rec.tid});if(j>=0){ta.splice(j,1);changed=true}}}
   S2.known[key]=hrec(rec)});
  return changed}
 function s2wipe(){var u=REAL.users,nv=mkEmpty();nv.users=u;REAL=nv;keepMe();S2.seq=0;S2.known={}}
@@ -2049,6 +2055,7 @@ document.addEventListener('click',e=>{
  case 'icopen':{const q=IC[b.dataset.id];q.open=!q.open;const card=b.closest('.ich');card.classList.toggle('open',q.open);b.setAttribute('aria-expanded',q.open);if(q.open)icCal(b.dataset.id);return}
  case 'icmon':{const q=IC[b.dataset.id],[Y,M]=q.mon.split('-').map(Number),d=new Date(Y,M-1+Number(b.dataset.n),1);q.mon=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');icCal(b.dataset.id);return}
  case 'goSet':go('set');return;
+ case 'logToggle':logAll=!logAll;render();return;
  case 'per':per=Number(b.dataset.v);fresh=true;render();return;
  case 'trePer':trePer=Number(b.dataset.v);fresh=true;render();return;
  case 'goExp':go('exp');return;
@@ -2062,7 +2069,7 @@ document.addEventListener('click',e=>{
  case 'preview':go('preview');return;
  case 'edit':back();return;
  case 'validate':{const i={id:uid(),no:null,tmp:Date.now(),cl:draft.cl,d:TODAY,q:Object.fromEntries(Object.entries(draft.q).filter(([,v])=>v>0)),pu:{...c.prices},pays:[]};
-  c.inv.push(i);if(syncOn()){i.no=null;syncKick(80)}else if(online)i.no=++c.counter;else queue.push(i.id);
+  c.inv.push(i);logAdd('Vente enregistrée',jcl(i.cl));if(syncOn()){i.no=null;syncKick(80)}else if(online)i.no=++c.counter;else queue.push(i.id);
   toast(syncOn()?'Facture enregistrée · numéro en cours':online?'Facture '+label(i)+' enregistrée':'Enregistrée sur l’appareil, numéro en attente');draft={cl:'',q:{}};root('home');return}
  case 'open':invCtx=ctxIds();go('inv',b.dataset.id);return;
  case 'invnav':if(!b.dataset.id)return;sub=b.dataset.id;fresh=false;render();window.scrollTo(0,0);return;
@@ -2156,10 +2163,10 @@ document.addEventListener('click',e=>{
  case 'multipay':multiModal();return;
  case 'mpgo':{const by=val('pby'),er=document.getElementById('per'),rows=[...document.querySelectorAll('[data-mp]')].map(e=>({i:cur().inv.find(x=>x.id===e.dataset.mp),a:num(e.value)})).filter(r=>r.i&&r.a>0);
   if(!rows.length){er.textContent='Entre au moins un montant.';return}const over=rows.find(r=>r.a>rest(r.i));if(over){er.textContent='Le montant de '+cname(over.i.cl)+' dépasse son reste ('+ar(rest(over.i))+').';return}
-  const grp=uid();rows.forEach(r=>r.i.pays.push({id:uid(),d:TODAY,a:r.a,by,grp}));const tt=rows.reduce((a,r)=>a+r.a,0);selInv.clear();close();toast(ar(tt)+' encaissés sur '+rows.length+' facture'+(rows.length>1?'s':''));render();return}
+  const grp=uid();rows.forEach(r=>r.i.pays.push({id:uid(),d:TODAY,a:r.a,by,grp}));const tt=rows.reduce((a,r)=>a+r.a,0);logAdd('Encaissement '+ar(tt),rows.length+' facture'+(rows.length>1?'s':''));selInv.clear();close();toast(ar(tt)+' encaissés sur '+rows.length+' facture'+(rows.length>1?'s':''));render();return}
  case 'qpay':{const i=cur().inv.find(x=>x.id===b.dataset.id);if(!i)return;const raw=qpv[i.id]||'',amt=raw?num(raw):rest(i);
   if(amt<=0){toast('Entre un montant');return}if(amt>rest(i)){toast('Dépasse le reste ('+ar(rest(i))+')');return}
-  i.pays.push({id:uid(),d:TODAY,a:amt,by:meName()});delete qpv[i.id];selInv.delete(i.id);toast(amt>=rest(i)+amt?'Facture soldée ✓':ar(amt)+' encaissés');render();return}
+  i.pays.push({id:uid(),d:TODAY,a:amt,by:meName()});logAdd('Encaissement '+ar(amt),jcl(i.cl));delete qpv[i.id];selInv.delete(i.id);toast(amt>=rest(i)+amt?'Facture soldée ✓':ar(amt)+' encaissés');render();return}
  case 'account':payMode='all';payCl=b.dataset.id;payAmt=0;payScreen();return;
  case 'payopen':payMode='new';payCl='';payAmt=0;payScreen();return;
  case 'payold':payMode='old';payCl='';payAmt=0;payScreen();return;
@@ -2169,12 +2176,12 @@ document.addEventListener('click',e=>{
   if(!payCl){er.textContent='Choisis le revendeur.';return}
   if(payAmt<=0){er.textContent='Entre le montant reçu.';return}
   if(payAmt>A.debt){er.textContent='Ce montant dépasse ce que '+cname(payCl)+' doit ('+ar(A.debt)+').';return}
-  const grp=uid();A.plan.forEach(x=>x.i.pays.push({id:uid(),d:TODAY,a:x.p,by,grp}));close();toast(ar(payAmt)+' réparti sur '+A.plan.length+' facture'+(A.plan.length>1?'s':''));render();return}
+  const grp=uid();A.plan.forEach(x=>x.i.pays.push({id:uid(),d:TODAY,a:x.p,by,grp}));logAdd('Encaissement '+ar(payAmt),A.plan.length+' facture'+(A.plan.length>1?'s':''));close();toast(ar(payAmt)+' réparti sur '+A.plan.length+' facture'+(A.plan.length>1?'s':''));render();return}
  case 'doPay':{const id=b.dataset.id,acc=b.dataset.acc,amt=num(val('am')),by=val('by');
   const invs=acc?liveInv().filter(i=>i.cl===id&&rest(i)>0).sort((x,y)=>x.d.localeCompare(y.d)):[c.inv.find(i=>i.id===id)],r=invs.reduce((s,i)=>s+rest(i),0);
   if(amt<=0){document.getElementById('er').textContent='Entre un montant.';return}
   if(amt>r){document.getElementById('er').textContent='Ce montant dépasse le reste à payer ('+ar(r)+').';return}
-  let left=amt;invs.forEach(i=>{const p=Math.min(left,rest(i));if(p>0){i.pays.push({id:uid(),d:TODAY,a:p,by});left-=p}});
+  let left=amt;invs.forEach(i=>{const p=Math.min(left,rest(i));if(p>0){i.pays.push({id:uid(),d:TODAY,a:p,by});left-=p}});logAdd('Encaissement '+ar(amt),jcl(invs[0]&&invs[0].cl));
   close();toast(amt===r?'Facture soldée ✓':'Paiement enregistré');render();return}
  case 'cl2':go('cli',b.dataset.id);return;
  case 'efcatset':ef.cat=b.dataset.c;ef.open=true;render();return;
@@ -2190,26 +2197,40 @@ document.addEventListener('click',e=>{
  case 'pickcl':draft.cl=b.dataset.id;render();return;
  case 'clBack':back();return;
  case 'newCl':modal(`<h3>Nouveau revendeur</h3><div class="field"><label for="nn">Nom</label><input id="nn"></div><div class="field"><label for="nt">Contact</label><input id="nt" inputmode="tel"></div>${btns('doCl')}`);return;
+ case 'invEdit':{const i=c.inv.find(x=>x.id===b.dataset.id);if(!i)return;clEditId=i.id;
+  const opts=[...c.clients.filter(x=>!x.del||x.id===i.cl)].sort((a,b2)=>a.n.localeCompare(b2.n)).map(x=>`<option value="${x.id}" ${x.id===i.cl?'selected':''}>${esc(x.n)}</option>`).join('');
+  modal(`<h3>Corriger ${esc(label(i))}</h3><p class="note">Les paiements déjà saisis restent. L’ancienne valeur est gardée dans le journal.</p><div class="field"><label for="iec">Client</label><select id="iec">${opts}</select></div><div class="field"><label for="ied">Date</label><input id="ied" type="date" value="${i.d}"></div><div class="field"><label>Œufs par taille</label><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">${SIZES.map(k=>`<label style="display:flex;align-items:center;gap:8px;font-weight:700"><span style="width:44px">${k}</span><input id="ieq_${k}" inputmode="numeric" autocomplete="off" value="${i.q[k]||''}" style="min-width:0"></label>`).join('')}</div></div><div class="err" id="ieer"></div>${btns('doInvEdit')}`);return}
+ case 'doInvEdit':{const i=c.inv.find(x=>x.id===clEditId),er=document.getElementById('ieer');if(!i)return;const q={};SIZES.forEach(k=>{const v=num(val('ieq_'+k));if(v>0)q[k]=v});
+  if(!Object.keys(q).length){er.textContent='Mets au moins une taille avec des œufs.';return}
+  const pu={...i.pu};Object.keys(q).forEach(k=>{if(pu[k]==null)pu[k]=c.prices[k]});const nt=Object.entries(q).reduce((s,[k,v])=>s+v*pu[k],0);
+  if(nt<paid(i)){er.textContent='Le nouveau total ('+ar(nt)+') est plus petit que ce qui est déjà encaissé ('+ar(paid(i))+'). Annule d’abord un paiement.';return}
+  const oc=cname(i.cl),nc=(c.clients.find(x=>x.id===val('iec'))||{n:oc}).n,od=i.d,nd=val('ied')||i.d,oq=SIZES.filter(k=>i.q[k]).map(k=>k+' '+i.q[k]).join(', '),nq=SIZES.filter(k=>q[k]).map(k=>k+' '+q[k]).join(', ');
+  const ch=[];if(oc!==nc)ch.push('client '+oc+' → '+nc);if(od!==nd)ch.push('date '+od+' → '+nd);if(oq!==nq)ch.push('œufs '+oq+' → '+nq);
+  if(!ch.length){close();return}
+  i.cl=val('iec');i.d=nd;i.q=q;i.pu=pu;logAdd('Facture '+label(i)+' corrigée : '+ch.join(' ; '),'');close();toast('Facture corrigée');render();return}
+ case 'invDel':{const i=c.inv.find(x=>x.id===b.dataset.id);if(!i)return;clEditId=i.id;const pd=paid(i);
+  modal(`<h3>Effacer ${esc(label(i))} ?</h3><p class="note">Facture de <b>${esc(cname(i.cl))}</b> : ${ar(tot(i))}.${pd?` <b>${ar(pd)}</b> déjà encaissés sur cette facture disparaissent aussi des comptes.`:''} Elle disparaît de tous tes appareils. Une ligne dans le journal garde la trace. Si tu veux seulement corriger une erreur, utilise <b>Corriger</b>.</p><div class="row"><button class="btn l" data-a="mclose">Garder</button><button class="btn r" data-a="doInvDel">Oui, effacer</button></div>`);return}
+ case 'doInvDel':{const i=c.inv.find(x=>x.id===clEditId);if(!i)return;const txt='Facture '+label(i)+' effacée ('+cname(i.cl)+', '+ar(tot(i))+(paid(i)?', dont '+ar(paid(i))+' encaissés':'')+')';goneAdd('inv',i.id);logAdd(txt,'');close();stack=[];sub=null;view='home';toast('Facture effacée');render();return}
  case 'clEdit':{const cl=c.clients.find(x=>x.id===b.dataset.id);if(!cl)return;clEditId=cl.id;modal(`<h3>Modifier le client</h3><div class="field"><label for="en">Nom</label><input id="en" value="${esc(cl.n)}" autocomplete="off"></div><div class="field"><label for="et">Téléphone</label><input id="et" type="tel" inputmode="tel" value="${esc(cl.tel||'')}" autocomplete="off"></div>${btns('doClEdit')}`);return}
  case 'doClEdit':{const cl=c.clients.find(x=>x.id===clEditId),n=val('en').trim();if(!cl||!n)return;const old=cl.n;cl.n=n;cl.tel=val('et').trim();if(old!==n)logAdd('Client renommé : '+old+' → '+n,'');close();toast('Client modifié');render();return}
  case 'clDel':{const cl=c.clients.find(x=>x.id===b.dataset.id);if(!cl)return;clEditId=cl.id;const nb=c.inv.filter(i=>i.cl===cl.id).length;
   if(nb){modal(`<h3>Effacer ${esc(cl.n)} ?</h3><p class="note">Ce client a déjà ${nb} facture${nb>1?'s':''} : il ne peut pas être effacé, pour que les comptes restent justes. Si son nom est mal écrit, utilise <b>Modifier</b>.</p><div class="row"><button class="btn l" data-a="mclose">Compris</button></div>`);return}
   modal(`<h3>Effacer ${esc(cl.n)} ?</h3><p class="note">Ce client n’a aucune vente. Il disparaît de la liste, sur tous tes appareils.</p><div class="row"><button class="btn l" data-a="mclose">Garder</button><button class="btn r" data-a="doClDel">Oui, effacer</button></div>`);return}
  case 'doClDel':{const cl=c.clients.find(x=>x.id===clEditId);if(!cl||c.inv.some(i=>i.cl===cl.id))return;cl.del=true;logAdd('Client effacé : '+cl.n,'');close();sub=null;stack=[];view='cli';toast('Client effacé');render();return}
- case 'doCl':{const n=val('nn').trim();if(n){const id=uid();c.clients.push({id,n,tel:val('nt')});draft.cl=id;close();render()}return}
+ case 'doCl':{const n=val('nn').trim();if(n){const id=uid();c.clients.push({id,n,tel:val('nt')});logAdd('Client ajouté',n);draft.cl=id;close();render()}return}
  case 'collect':modal(`<h3>Ramassage à la ferme</h3>${dateField('rd')}${sizeFields()}${noteField('rn')}<div style="height:12px"></div>${btns('doCol')}`);return;
- case 'doCol':{const qq={};document.querySelectorAll('[data-col]').forEach(x=>{const v=num(x.value);if(v)qq[x.dataset.col]=v});if(!Object.keys(qq).length)return;c.ram.push({id:uid(),d:val('rd')||TODAY,q:qq,note:val('rn')});close();toast('Stock mis à jour');render();return}
+ case 'doCol':{const qq={};document.querySelectorAll('[data-col]').forEach(x=>{const v=num(x.value);if(v)qq[x.dataset.col]=v});if(!Object.keys(qq).length)return;c.ram.push({id:uid(),d:val('rd')||TODAY,q:qq,note:val('rn')});logAdd('Stock œufs ajouté',val('rn'));close();toast('Stock mis à jour');render();return}
  case 'casse':modal(`<h3>Œufs cassés</h3>${dateField('rd')}${sizeFields()}${noteField('rn','ex. cassés au transport')}<div style="height:12px"></div>${btns('doCas')}`);return;
- case 'doCas':{const qq={};document.querySelectorAll('[data-col]').forEach(x=>{const v=num(x.value);if(v)qq[x.dataset.col]=v});if(!Object.keys(qq).length)return;c.cas.push({id:uid(),d:val('rd')||TODAY,q:qq,note:val('rn')});close();toast('Casse enregistrée');render();return}
+ case 'doCas':{const qq={};document.querySelectorAll('[data-col]').forEach(x=>{const v=num(x.value);if(v)qq[x.dataset.col]=v});if(!Object.keys(qq).length)return;c.cas.push({id:uid(),d:val('rd')||TODAY,q:qq,note:val('rn')});logAdd('Casse enregistrée',val('rn'));close();toast('Casse enregistrée');render();return}
  case 'stab':stockTab=b.dataset.k;render();return;
  case 'addExp':expModal(b.dataset.d);return;
  case 'addOwn':ownK=b.dataset.k;ownModal(ownK);return;
- case 'doOwn':{const v=num(val('oa'));if(!v)return;(c.own=c.own||[]).push({id:uid(),d:val('od')||TODAY,a:v,k:ownK,who:val('ow'),note:val('on')});close();toast(ownK==='in'?'Apport enregistré':'Retrait enregistré');render();return}
- case 'doExp':{const v=num(val('ea'));if(!v)return;let cat=val('ecn').trim()||val('ec');if(!c.cats.includes(cat))c.cats.push(cat);c.exp.push({id:uid(),d:val('ed')||TODAY,c:cat,a:v,note:val('eno')});close();toast('Dépense enregistrée');render();return}
+ case 'doOwn':{const v=num(val('oa'));if(!v)return;(c.own=c.own||[]).push({id:uid(),d:val('od')||TODAY,a:v,k:ownK,who:val('ow'),note:val('on')});logAdd((ownK==='in'?'Apport ':'Retrait ')+ar(v),val('ow'));close();toast(ownK==='in'?'Apport enregistré':'Retrait enregistré');render();return}
+ case 'doExp':{const v=num(val('ea'));if(!v)return;let cat=val('ecn').trim()||val('ec');if(!c.cats.includes(cat))c.cats.push(cat);c.exp.push({id:uid(),d:val('ed')||TODAY,c:cat,a:v,note:val('eno')});logAdd('Dépense '+ar(v),cat);close();toast('Dépense enregistrée');render();return}
  case 'addPon':modal(`<h3>Ponte de la journée</h3><p class="note">Le nombre d’œufs donné par les éleveurs. Tu peux saisir un jour passé.</p>${dateField('pd',b.dataset.d)}<div class="field"><label for="pn">Œufs pondus</label><input id="pn" inputmode="numeric"></div>${noteField('pno','ex. forte chaleur')}${btns('doPon')}`);return;
- case 'doPon':{const n=num(val('pn'));if(!n)return;c.pon.push({id:uid(),d:val('pd')||TODAY,n,note:val('pno')});close();toast('Ponte enregistrée');render();return}
+ case 'doPon':{const n=num(val('pn'));if(!n)return;c.pon.push({id:uid(),d:val('pd')||TODAY,n,note:val('pno')});logAdd('Ponte '+n+' œufs',val('pno'));close();toast('Ponte enregistrée');render();return}
  case 'addHen':modal(`<h3>Mouvement de poules</h3><div class="field"><label for="hk">Type</label><select id="hk"><option value="mort">Poules mortes</option><option value="add">Poules ajoutées</option></select></div>${dateField('hd')}<div class="field"><label for="hn">Nombre</label><input id="hn" inputmode="numeric"></div>${noteField('hno','ex. chaleur, maladie')}${btns('doHen')}`);return;
- case 'doHen':{const n=num(val('hn'));if(!n)return;const k=val('hk');c.hens.push({id:uid(),d:val('hd')||TODAY,n:k==='mort'?-n:n,kind:k,note:val('hno')});close();toast('Effectif mis à jour');render();return}
+ case 'doHen':{const n=num(val('hn'));if(!n)return;const k=val('hk');c.hens.push({id:uid(),d:val('hd')||TODAY,n:k==='mort'?-n:n,kind:k,note:val('hno')});logAdd('Poules : '+(k==='mort'?'-':'+')+n,k);close();toast('Effectif mis à jour');render();return}
  case 'asper':asPer=b.dataset.v;asSel='';fresh=true;render();return
  case 'assel':asSel=b.dataset.s;render();return
  case 'asapply':{const f=val('asf'),t2=val('ast');if(f&&t2){asFrom=f<=t2?f:t2;asTo=f<=t2?t2:f}render();return}
@@ -2221,7 +2242,7 @@ document.addEventListener('click',e=>{
  case 'cancelInv':pend={kind:'inv',id:b.dataset.id};cancelModal('Annuler cette facture ?');return;
  case 'cancelPay':pend={kind:'pay',id:b.dataset.id,p:b.dataset.p};cancelModal('Annuler ce règlement ?');return;
  case 'cancelGen':pend={kind:b.dataset.kind,id:b.dataset.id};cancelModal('Annuler cet élément ?');return;
- case 'doCancel':{const x={why:val('why').trim(),d:TODAY};
+ case 'doCancel':{const x={why:val('why').trim(),d:TODAY};logAdd(pend.kind==='inv'?'Facture annulée':'Paiement annulé',x.why);
   if(pend.kind==='inv')c.inv.find(i=>i.id===pend.id).x=x;
   else if(pend.kind==='pay')c.inv.find(i=>i.id===pend.id).pays.find(p=>p.id===pend.p).x=x;
   else{const m={ram:c.ram,cas:c.cas,exp:c.exp,pon:c.pon,hen:c.hens,own:c.own}[pend.kind];m.find(i=>i.id===pend.id).x=x}
@@ -2286,7 +2307,7 @@ const EYE_ON='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke
 function eyeUp(){document.querySelectorAll('input[type=password]:not([data-eye])').forEach(i=>{i.dataset.eye='1';const w=document.createElement('span');w.className='pw';i.parentNode.insertBefore(w,i);w.appendChild(i);const b=document.createElement('button');b.type='button';b.className='eye';b.setAttribute('aria-label','Afficher le code');b.innerHTML=EYE_ON;w.appendChild(b)})}
 try{new MutationObserver(eyeUp).observe(document.body,{childList:true,subtree:true});eyeUp()}catch(e){}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.eye');if(!b)return;e.preventDefault();e.stopPropagation();const i=b.parentNode.querySelector('input');if(!i)return;const show=i.type==='password';i.type=show?'text':'password';b.innerHTML=show?EYE_OFF:EYE_ON;b.setAttribute('aria-label',show?'Cacher le code':'Afficher le code');i.focus()},true);
-const APP_VERSION='2026.11.09-b';
+const APP_VERSION='2026.11.09-d';
 function showUpd(){let seen='';try{seen=localStorage.getItem('atodyv_ver')||''}catch(e){}
  try{localStorage.setItem('atodyv_ver',APP_VERSION)}catch(e){}
  if(!seen||seen===APP_VERSION)return;const sp=document.getElementById('splash');if(!sp)return;
